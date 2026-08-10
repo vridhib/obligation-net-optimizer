@@ -2,11 +2,11 @@ import heapq
 from copy import deepcopy
 from decimal import Decimal
 from typing import Any
+from datetime import datetime
 
 
-# TODO: add timestamps to net_payments from multilateral_net to favor age
 def settlement_scheduler(
-        net_payments: list[tuple[str, str, Decimal]], 
+        net_payments: list[tuple[str, str, Decimal, datetime]], 
         initial_balances: dict[str, Decimal]
 ) -> dict[str, Any]:
     """
@@ -15,7 +15,7 @@ def settlement_scheduler(
     Payments are processed in descending amount order. If a payer lacks funds, the payment is retried once after payments have been attempted.
 
     Args:
-        net_payments: list of (payer, payee, amount) with amount > 0.
+        net_payments: list of (payer, payee, amount, timestamp) with amount > 0.
         initial_balances: dict mapping a participant to available liquidity.
 
     Returns:
@@ -29,18 +29,16 @@ def settlement_scheduler(
     """
     balances = deepcopy(initial_balances)
     heap = []
-    counter = 0 # FIFO tie-breaker
 
-    for payer, payee, amt in net_payments:
-        heapq.heappush(heap, (-amt, counter, payer, payee))
-        counter += 1
+    for payer, payee, amt, ts in net_payments:
+        heapq.heappush(heap, (ts.timestamp(), -amt, payer, payee))
 
     settled = []
     failed = []
 
     # First pass
     while heap:
-        (neg_amt, _, payer, payee) = heapq.heappop(heap)
+        (_, neg_amt, payer, payee) = heapq.heappop(heap)
         amt = -neg_amt
         if balances.get(payer, Decimal(0)) >= amt:
             balances[payer] -= amt
