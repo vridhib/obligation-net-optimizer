@@ -17,15 +17,25 @@ def assign_clusters(participants: list[str], cluster_size: int = 5) -> list:
     return clusters
 
 
-def generate_cycle(participants: list[str], min_amount: int = 1000, max_amount: int = 100000) -> list[tuple[str, str, float]]:
+def generate_cycle(
+        participants: list[str], 
+        min_amount: int = 1000, 
+        max_amount: int = 100000,
+        tz: timezone = timezone.utc
+) -> list[tuple[str, str, float, datetime]]:
     length = random.choice([3, 4, 5])
     cycle_nodes = random.sample(participants, length)
+
+    # All edges in this cycle will get same random timestamp within the day
+    base_ts = datetime(2026, 7, 15, 8, 0, 0, tzinfo=tz) + timedelta(
+        seconds=random.randint(0, 10*60*60 - 1)  # 10 hrs in secs
+    )
     edges = []
     for i in range(length):
         payer = cycle_nodes[i]
         payee = cycle_nodes[(i + 1) % length]
         amount = round(random.uniform(min_amount, max_amount), 2)
-        edges.append((payer, payee, amount))
+        edges.append((payer, payee, amount, base_ts))
     return edges
 
 
@@ -57,7 +67,7 @@ def _generate_raw_edges(
     noise_factor: int, 
     participants: list[str], 
     clusters: list
-) -> list[tuple[str, str, float]]:
+) -> list[tuple[str, str, float, datetime | None]]:
     all_obligations = []
     # Generate cycles within clusters
     if num_cycles > 0:
@@ -76,25 +86,25 @@ def _generate_raw_edges(
         if payer == payee:
             continue
         amount = round(random.lognormvariate(10, 1.5), 2)
-        all_obligations.append((payer, payee, amount))
+        all_obligations.append((payer, payee, amount, None)) # Assign rand timestamp later
 
     return all_obligations
 
 
 def _build_obligation_df(edges: list, start_time: datetime, end_time: datetime) -> DataFrame:
     # Create DataFrame with timestamps
-    df = pd.DataFrame(edges, columns=['payer', 'payee', 'amount'])
+    df = pd.DataFrame(edges, columns=['payer', 'payee', 'amount', 'timestamp'])
     df['currency'] = 'USD'
 
-    # Generate random timestamps between start and end
+    # For edges without a timestamp (noise), assign random timestamp
     time_diff_sec = (end_time - start_time).total_seconds()
-    # Sample timestamps uniformly, then sort
-    df['timestamp'] = [
-        start_time + timedelta(seconds=random.randint(0, int(time_diff_sec)))
-        for _ in range(len(df))
+    mask = df['timestamp'].isnull()
+    df.loc[mask, 'timestamp'] = [
+        start_time + timedelta(seconds=random.randint(0, int(time_diff_sec))) for _ in range(mask.sum())
     ]
-    df = df.sort_values('timestamp')
 
+    df = df.sort_values('timestamp')
+    
     # Add unique tx_id
     df['tx_id'] = [str(uuid.uuid4()) for _ in range(len(df))]
     df = df[['tx_id', 'payer', 'payee', 'amount', 'currency', 'timestamp']]
