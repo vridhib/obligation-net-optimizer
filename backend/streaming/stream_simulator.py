@@ -3,10 +3,12 @@ import logging
 import threading
 import pandas as pd
 import matplotlib.pyplot as plt
-from datetime import datetime, timedelta
+from django.utils import timezone as django_timezone
+from datetime import datetime, timedelta, timezone
 from collections import defaultdict, deque
 from decimal import Decimal
 from .obligation_store import ObligationStore, Obligation
+from obligations.utils import persist_window
 from netting.bilateral import bilateral_net
 from netting.scc import multilateral_net
 from netting.settlement import settlement_scheduler
@@ -158,19 +160,24 @@ class StreamSimulator:
         try:
             df = pd.read_csv(csv_path, parse_dates=['timestamp'])
             df.sort_values('timestamp', inplace=True)
-            obligations = [
+        except pd.errors.EmptyDataError:
+            return []
+
+        obligations = []
+        for row in df.itertuples():
+            ts = row.timestamp.to_pydatetime()
+            if django_timezone.is_naive(ts):
+                ts = django_timezone.make_aware(ts, timezone=timezone.utc)
+            obligations.append(
                 Obligation(
                     tx_id=str(row.tx_id),
                     payer=row.payer,
                     payee=row.payee,
-                    timestamp=row.timestamp.to_pydatetime(),
-                    amount=Decimal(str(row.amount))
+                    timestamp=ts,
+                    amount=Decimal(str(row.amount)),
                 )
-                for row in df.itertuples()
-            ] 
-            return obligations
-        except pd.errors.EmptyDataError:
-            return []
+            )
+        return obligations
 
 
     def stop(self):
@@ -209,6 +216,7 @@ class StreamSimulator:
         self._running = False
 
 
+    # TODO: refactor _process_window
     def _process_window(self, window_end: datetime):
         """Run netting and settlement for the window [start, window_end)"""
 
@@ -257,4 +265,16 @@ class StreamSimulator:
             gross_volume=gross_amount,
             failure_rate=results['failure_rate'],
             last_window_end=window_end
+        )
+
+        persist_window(
+            window_obls=window_obls,
+            window_start=window_start,
+            window_end=window_end,
+            net_volume=net_volume,
+            liquidity_saved=liquidity_saved,
+            net_positions=dict(net_positions),
+            settled_payments=results['settled'],
+            failed_payments=results['failed'],
+            balances=self._balances,
         )
