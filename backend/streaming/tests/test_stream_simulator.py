@@ -7,6 +7,8 @@ from streaming.obligation_store import ObligationStore
 from streaming.stream_simulator import StreamSimulator, Snapshot
 
 
+pytestmark = pytest.mark.django_db
+
 # ------------- Fixtures -------------
 @pytest.fixture
 def run_simulation():
