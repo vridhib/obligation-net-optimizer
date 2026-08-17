@@ -26,7 +26,7 @@ class NettingWindowSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = NettingWindow
-        fields = ['window_id', 'start_time', 'end_time', 'gross_obligation_count', 'net_obligation_count', 'net_volume', 'liquidity_saved', 'created_at', 'net_positions', 'settlement_attempts']
+        fields = ['window_id', 'start_time', 'end_time', 'gross_obligation_count', 'net_obligation_count', 'gross_volume' 'net_volume', 'liquidity_saved', 'created_at', 'net_positions', 'settlement_attempts']
         read_only_fields = ['window_id', 'created_at']
 
 

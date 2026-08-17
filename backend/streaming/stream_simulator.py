@@ -228,10 +228,10 @@ class StreamSimulator:
         if not window_obls: return
 
         gross_dict = defaultdict(lambda: defaultdict(deque))
-        gross_amount = Decimal(0)
+        gross_volume = Decimal(0)
         for obl in window_obls:
             gross_dict[obl.payer][obl.payee].append((obl.tx_id, obl.amount, obl.timestamp))
-            gross_amount += obl.amount
+            gross_volume += obl.amount
 
         # Bilateral net and multilateral net
         net_edges = bilateral_net(gross_dict)
@@ -245,7 +245,7 @@ class StreamSimulator:
 
         # Calculate metrics
         net_volume = sum(amt for _, _, amt in net_edges)
-        liquidity_saved = gross_amount - net_volume
+        liquidity_saved = gross_volume - net_volume
         total_settled = results['total_settled']
         total_failed = results['total_failed']
 
@@ -262,7 +262,7 @@ class StreamSimulator:
             total_failed=total_failed,
             liquidity_used=self.snapshot.liquidity_used + total_settled,
             liquidity_saved=liquidity_saved,
-            gross_volume=gross_amount,
+            gross_volume=gross_volume,
             failure_rate=results['failure_rate'],
             last_window_end=window_end
         )
@@ -271,6 +271,7 @@ class StreamSimulator:
             window_obls=window_obls,
             window_start=window_start,
             window_end=window_end,
+            gross_volume=gross_volume,
             net_volume=net_volume,
             liquidity_saved=liquidity_saved,
             net_positions=dict(net_positions),

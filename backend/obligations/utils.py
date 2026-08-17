@@ -7,6 +7,7 @@ def persist_window(
     window_obls: list[Obligation],
     window_start: datetime,
     window_end: datetime, 
+    gross_volume: Decimal,
     net_volume: Decimal,
     liquidity_saved: Decimal,
     net_positions: dict[str, Decimal],
@@ -20,6 +21,7 @@ def persist_window(
         end_time=window_end,
         gross_obligation_count=len(window_obls),
         net_obligation_count=len(settled_payments) + len(failed_payments),
+        gross_volume=gross_volume,
         net_volume=net_volume,
         liquidity_saved=liquidity_saved
     )

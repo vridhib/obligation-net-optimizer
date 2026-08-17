@@ -44,6 +44,7 @@ class NettingWindow(models.Model):
     end_time = models.DateTimeField()
     gross_obligation_count = models.IntegerField()
     net_obligation_count = models.IntegerField()
+    gross_volume = models.DecimalField(max_digits=18, decimal_places=2)
     net_volume = models.DecimalField(max_digits=18, decimal_places=2)
     liquidity_saved = models.DecimalField(max_digits=18, decimal_places=2)
     created_at = models.DateTimeField(auto_now_add=True)
