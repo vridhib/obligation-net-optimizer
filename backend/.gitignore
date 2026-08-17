@@ -9,6 +9,5 @@ __pycache__/
 .env
 *.log
 db.sqlite3
-migrations/
 tmp/
 data/
