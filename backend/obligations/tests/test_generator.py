@@ -23,13 +23,8 @@ def participant_cluster():
 def test_default_parameters_return_dataframe():
     df = generate_obligations()
     assert isinstance(df, pd.DataFrame)
-    expected_cols = {'tx_id', 'payer', 'payee', 'amount', 'currency', 'timestamp'}
+    expected_cols = {'payer', 'payee', 'amount', 'currency', 'timestamp'}
     assert set(df.columns) == expected_cols
-
-
-def test_all_tx_ids_unique():
-    df = generate_obligations(num_cycles=5, noise_factor=2)
-    assert df['tx_id'].is_unique
 
 
 def test_all_amounts_positive():

@@ -1,14 +1,11 @@
-import uuid
 from rest_framework import serializers
 from obligations.models import Obligation, NettingWindow, NetPosition, SettlementAttempt, ParticipantBalance
 
 
 class ObligationSerializer(serializers.ModelSerializer):
-    tx_id = serializers.UUIDField(default=uuid.uuid4)
     class Meta: 
         model = Obligation
         fields = ['tx_id', 'payer', 'payee', 'amount', 'currency', 'timestamp', 'status', 'netting_window']
-        read_only_fields = ['tx_id']
 
 
 class NetPositionSerializer(serializers.ModelSerializer):
@@ -36,5 +33,5 @@ class NettingWindowSerializer(serializers.ModelSerializer):
 class ParticipantBalanceSerializer(serializers.ModelSerializer):
     class Meta:
         model = ParticipantBalance
-        fields = ['participant', 'balance', 'created_at']
+        fields = ['participant', 'balance', 'last_updated']
         read_only_fields = ['last_updated']

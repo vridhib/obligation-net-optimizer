@@ -1,5 +1,4 @@
 import random
-import uuid
 from datetime import datetime, timedelta, timezone
 import pandas as pd
 from pandas import DataFrame
@@ -104,9 +103,4 @@ def _build_obligation_df(edges: list, start_time: datetime, end_time: datetime) 
     ]
 
     df = df.sort_values('timestamp')
-    
-    # Add unique tx_id
-    df['tx_id'] = [str(uuid.uuid4()) for _ in range(len(df))]
-    df = df[['tx_id', 'payer', 'payee', 'amount', 'currency', 'timestamp']]
-
     return df

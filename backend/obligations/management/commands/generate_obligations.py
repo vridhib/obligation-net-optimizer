@@ -22,7 +22,6 @@ class Command(BaseCommand):
         else:
             obligations = [
                 Obligation(
-                    tx_id=row.tx_id,
                     payer=row.payer,
                     payee=row.payee,
                     amount=row.amount,

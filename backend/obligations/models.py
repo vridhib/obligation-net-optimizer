@@ -1,3 +1,4 @@
+import uuid
 from django.db import models
 from django.utils.translation import gettext_lazy as _
 
@@ -9,7 +10,7 @@ class Obligation(models.Model):
         SETTLED = 'settled', _('Settled')
         FAILED = 'failed', _('Failed')
 
-    tx_id = models.UUIDField(primary_key=True)
+    tx_id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     payer = models.CharField(max_length=50)
     payee = models.CharField(max_length=50)
     amount = models.DecimalField(max_digits=18, decimal_places=2)
