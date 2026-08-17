@@ -6,7 +6,7 @@ from .views import ObligationViewSet, NettingWindowViewSet, ParticipantBalanceVi
 router = DefaultRouter()
 router.register(r'obligations', ObligationViewSet)
 router.register(r'netting-windows', NettingWindowViewSet)
-router.register(r'balances', ParticipantBalanceViewSet)
+router.register(r'participants', ParticipantBalanceViewSet)
 
 urlpatterns = [
     path('', include(router.urls)),
