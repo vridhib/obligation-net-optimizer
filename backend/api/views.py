@@ -1,4 +1,4 @@
-from rest_framework import viewsets, status
+from rest_framework import viewsets, status, filters
 from rest_framework.parsers import MultiPartParser, JSONParser
 from rest_framework.response import Response
 from rest_framework.permissions import AllowAny
@@ -12,6 +12,8 @@ class ObligationViewSet(viewsets.ModelViewSet):
     queryset = Obligation.objects.all()
     serializer_class = ObligationSerializer
     permission_classes = [AllowAny]
+    filter_backends = [filters.SearchFilter]
+    search_fields = ["payer", "payee", "tx_id"]
 
     @action(detail=False, methods=['post'], url_path='bulk', parser_classes=[MultiPartParser, JSONParser])
     def bulk(self, request):

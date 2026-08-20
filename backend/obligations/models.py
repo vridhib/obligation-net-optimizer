@@ -30,6 +30,7 @@ class Obligation(models.Model):
     class Meta:
         verbose_name = "obligation"
         verbose_name_plural = "obligations"
+        ordering = ["-timestamp", "tx_id"]
         indexes = [
             models.Index(fields=["payer", "payee", "timestamp", "status"])
         ]
