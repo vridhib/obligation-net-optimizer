@@ -43,10 +43,40 @@ export async function getParticipants(): Promise<ParticipantBalance[]> {
   return res.data.results;
 }
 
+
+// ----------------- Obligations -----------------
 export async function createObligation(payload: Partial<Obligation>): Promise<Obligation> {
   const res = await api.post<Obligation>("/obligations/", payload);
   return res.data;
 }
+
+export async function getObligations(params?: {
+  page?: number;
+  search?: string;
+}): Promise<PaginatedResponse<Obligation>> {
+  const res = await api.get<PaginatedResponse<Obligation>>("/obligations/", { params });
+  return res.data;
+}
+
+export async function bulkUploadObligations(
+  file?: File,
+  json?: string
+): Promise<{ created_count: number, errors_count: number }> {
+  if (file) {
+    const formData = new FormData();
+    formData.append("file", file);
+    const res  = await api.post(
+      "/obligations/bulk/",
+      formData,
+      { headers: { "Content-Type": "multipart/form-data" }}
+    );
+    return res.data
+  }
+  const payload = JSON.parse(json || "[]");
+  const res = await api.post("obligations/bulk/", payload);
+  return res.data;
+}
+
 
 export async function triggerNetting(file: File): Promise<{ task_id: string }> {
   const formData = new FormData();
