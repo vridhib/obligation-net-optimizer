@@ -2,6 +2,7 @@ import time
 import logging
 import threading
 import pandas as pd
+import uuid
 import matplotlib.pyplot as plt
 from django.utils import timezone as django_timezone
 from datetime import datetime, timedelta, timezone
@@ -162,6 +163,9 @@ class StreamSimulator:
             df.sort_values('timestamp', inplace=True)
         except pd.errors.EmptyDataError:
             return []
+
+        if 'tx_id' not in df.columns:
+            df['tx_id'] = [str(uuid.uuid4()) for _ in range(len(df))]
 
         obligations = []
         for row in df.itertuples():

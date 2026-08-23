@@ -85,6 +85,18 @@ def test_empty_csv(run_simulation):
     assert final['total_settled'] == Decimal(0)
 
 
+def test_load_csv_missing_tx_id_generates_uuids(run_simulation):
+    rows = [
+        {"payer": "A", "payee": "B", "amount": 100.0, "currency": "USD",
+         "timestamp": "2026-07-15 08:00:00"},
+        {"payer": "B", "payee": "C", "amount": 50.0, "currency": "USD",
+         "timestamp": "2026-07-15 08:00:30"},
+    ]
+    snapshot = run_simulation(rows)   # no tx_id in rows
+    final = snapshot.get_snapshot()
+    assert final['total_settled'] == Decimal(150)
+
+
 def test_liquidity_shortfall(run_simulation):
     rows = [
         {"tx_id": "1", "payer": "A", "payee": "B", "amount": 200.0, "currency": "USD",
