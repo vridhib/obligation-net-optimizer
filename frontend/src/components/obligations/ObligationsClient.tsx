@@ -6,6 +6,7 @@ import { ObligationList } from "./ObligationList";
 import { ObligationForm } from "./ObligationForm";
 import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
+import { PageHeader } from "../ui/PageHeader";
 
 
 export function ObligationsClient() {
@@ -25,20 +26,18 @@ export function ObligationsClient() {
   }
 
   const totalPages = Math.ceil((data?.count ?? 0) / 20);
-  
+
   return (
     <main className="min-h-screen bg-black p-8 space-y-6">
-      <div className="flex items-center justify-between pb-6">
-        <div>
-          <h1 className="text-3xl font-semibold text-slate-100">Obligations</h1>
-          <p className="text-sm text-slate-500">
-            Manage individual payment instructions
-          </p>
-        </div>
-        <Button variant="primary" onClick={() => setIsFormOpen(true)}>
-          New Obligation
-        </Button>
-      </div>
+      <PageHeader
+        title="Obligations"
+        description="Manage individual payment instructions"
+        action={
+          <Button variant="primary" onClick={() => setIsFormOpen(true)}>
+            New Obligation
+          </Button>
+        }
+      />
 
       <Card className="bg-slate border-slate-800 p-4">
         <input

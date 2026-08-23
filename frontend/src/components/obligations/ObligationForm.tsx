@@ -4,12 +4,14 @@ import { createObligation, bulkUploadObligations } from "@/lib/api";
 import { Button } from "@/components/ui/Button";
 import { cn } from "@/lib/utils";
 import { InputField } from "../ui/InputField";
+import { X } from "lucide-react";
 
 
 type Tab = "single" | "bulk";
 
 export function ObligationForm({ 
-  onClose, onSuccess 
+  onClose,
+  onSuccess 
 }: { 
   onClose: () => void, 
   onSuccess: () => void 
@@ -54,7 +56,7 @@ export function ObligationForm({
         <div className="flex items-center justify-between">
           <h2 className="text-lg font-semibold text-slate-100">New Obligation</h2>
           <button onClick={onClose} className="text-slate-400 hover:text-slate-200">
-            ✕
+            <X className="h-5 w-5" />
           </button>
         </div>
 
