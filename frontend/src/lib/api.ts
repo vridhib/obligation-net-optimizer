@@ -8,6 +8,7 @@ import type {
   PaginatedResponse
 } from "./types";
 
+
 const baseURL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api";
 
 export const api = axios.create({
@@ -17,24 +18,6 @@ export const api = axios.create({
 
 export async function getSummary(): Promise<Summary> {
   const res = await api.get<Summary>("/netting-windows/summary/");
-  return res.data;
-}
-
-export async function getNettingWindows(): Promise<NettingWindow[]> {
-  const res = await api.get<PaginatedResponse<NettingWindow>>("/netting-windows/");
-  return res.data.results;
-}
-
-export async function getNettingWindow(id: number): Promise<NettingWindow> {
-  const res = await api.get<NettingWindow>(`/netting-windows/${id}/`);
-  return res.data;
-}
-
-export async function getLatestPositions(): Promise<NettingPositionsResponse> {
-  const res = await api.get<NettingPositionsResponse>(
-    "/netting-windows/positions/", 
-    { params: { window: "latest" } }
-  );
   return res.data;
 }
 
@@ -78,6 +61,17 @@ export async function bulkUploadObligations(
 }
 
 
+// --------------- Netting Windows ---------------
+export async function getNettingWindows(params?: { page?: number }): Promise <PaginatedResponse<NettingWindow>> {
+  const res = await api.get<PaginatedResponse<NettingWindow>>("/netting-windows/", { params });
+  return res.data;
+}
+
+export async function getNettingWindow(id: number): Promise<NettingWindow> {
+  const res = await api.get<NettingWindow>(`/netting-windows/${id}/`);
+  return res.data;
+}
+
 export async function triggerNetting(file: File): Promise<{ task_id: string }> {
   const formData = new FormData();
   formData.append("file", file);
@@ -85,6 +79,14 @@ export async function triggerNetting(file: File): Promise<{ task_id: string }> {
     "/netting-windows/trigger_netting/",
     formData,
     { headers: { "Content-Type": "multipart/form-data" } }
+  );
+  return res.data;
+}
+
+export async function getLatestPositions(): Promise<NettingPositionsResponse> {
+  const res = await api.get<NettingPositionsResponse>(
+    "/netting-windows/positions/", 
+    { params: { window: "latest" } }
   );
   return res.data;
 }
