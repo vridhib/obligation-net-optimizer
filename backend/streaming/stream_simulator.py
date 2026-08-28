@@ -2,10 +2,8 @@ import time
 import logging
 import threading
 import pandas as pd
-import uuid
 import matplotlib.pyplot as plt
-from django.utils import timezone as django_timezone
-from datetime import datetime, timedelta, timezone
+from datetime import datetime, timedelta
 from collections import defaultdict, deque
 from decimal import Decimal
 from .obligation_store import ObligationStore, Obligation
@@ -51,7 +49,7 @@ class Snapshot:
                 'gross_volume': self.gross_volume,
                 'failure_rate': self.failure_rate,
                 'balances': dict(self.balances),
-                'net_positions': dict(self.net_positions),
+                'net_positions': dict(self.net_positions)
             })
 
     def get_snapshot(self) -> dict:
@@ -157,40 +155,11 @@ class StreamSimulator:
         self._current_window_start = None
 
 
-    def load_csv(self, csv_path: str) -> list[Obligation]:
-        try:
-            df = pd.read_csv(csv_path, parse_dates=['timestamp'])
-            df.sort_values('timestamp', inplace=True)
-        except pd.errors.EmptyDataError:
-            return []
-
-        if 'tx_id' not in df.columns:
-            df['tx_id'] = [str(uuid.uuid4()) for _ in range(len(df))]
-
-        obligations = []
-        for row in df.itertuples():
-            ts = row.timestamp.to_pydatetime()
-            if django_timezone.is_naive(ts):
-                ts = django_timezone.make_aware(ts, timezone=timezone.utc)
-            obligations.append(
-                Obligation(
-                    tx_id=str(row.tx_id),
-                    payer=row.payer,
-                    payee=row.payee,
-                    timestamp=ts,
-                    amount=Decimal(str(row.amount)),
-                )
-            )
-        return obligations
-
-
     def stop(self):
         self._running = False
 
 
-    def run(self, csv_path: str):
-        # Load CSV
-        obligations = self.load_csv(csv_path)
+    def run(self, obligations: list[Obligation]):
         if not obligations: return
 
         # Set initial window start to earliest obligation time
@@ -213,7 +182,7 @@ class StreamSimulator:
                 delta = (next_ts - obl.timestamp).total_seconds()
                 if delta > 0 and self.speed_factor > 0:
                     time.sleep(delta / self.speed_factor)
-        
+    
         # After all obligations, close the final window
         if self.store:
             self._process_window(self._current_window_start + self.window_duration)
@@ -281,5 +250,5 @@ class StreamSimulator:
             net_positions=dict(net_positions),
             settled_payments=results['settled'],
             failed_payments=results['failed'],
-            balances=self._balances,
+            balances=self._balances
         )

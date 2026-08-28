@@ -1,20 +1,44 @@
 import pytest
-import tempfile
-import pandas as pd
-from datetime import timedelta
+from datetime import timedelta, datetime, timezone
+import uuid
+from django.utils import timezone as django_timezone
 from decimal import Decimal
-from streaming.obligation_store import ObligationStore
+from streaming.obligation_store import ObligationStore, Obligation
 from streaming.stream_simulator import StreamSimulator, Snapshot
 
 
 pytestmark = pytest.mark.django_db
 
+# ------------- Helpers --------------
+def parse_timestamp(ts_str: str) -> datetime:
+    dt = datetime.fromisoformat(ts_str)
+    if django_timezone.is_naive(dt):
+        dt = django_timezone.make_aware(dt, timezone=timezone.utc)
+    return dt    
+
+
+def make_obligations(rows: list[dict]) -> list[Obligation]:
+    """Convert row dicts into Obligation namedtuples."""
+    obligations = []
+    for row in rows:
+        obligations.append(
+            Obligation(
+                tx_id=str(uuid.uuid4()),
+                payer=row["payer"],
+                payee=row["payee"],
+                amount=Decimal(str(row["amount"])),
+                timestamp=parse_timestamp(row["timestamp"])
+            )
+        )
+    return obligations
+
+    
 # ------------- Fixtures -------------
 @pytest.fixture
 def run_simulation():
     """
-    Factory fixture that runs the simulator and returns the 
-    Snapshot object.
+    Factory fixture that runs the simulator with the given 
+    obligations and returns the Snapshot object.
     """
     def _run(
         rows: list[dict],
@@ -22,7 +46,7 @@ def run_simulation():
         window_duration: timedelta = timedelta(minutes=1),
         speed_factor: float = 0
     ):
-        csv_path = make_csv(rows)
+        obligations = make_obligations(rows)
         store = ObligationStore()
         snapshot = Snapshot()
         if initial_balances is None:
@@ -36,20 +60,11 @@ def run_simulation():
             window_duration=window_duration,
             speed_factor=speed_factor
         )
-        sim.run(csv_path)
+        sim.run(obligations)
         return snapshot
     return _run
 
 
-# ------------- Helpers --------------
-def make_csv(rows: list[dict]) -> str:
-    """Write rows to a temporary CSV and return its path."""
-    df = pd.DataFrame(rows)
-    with tempfile.NamedTemporaryFile(mode='w', suffix='.csv', delete=False) as f:
-        df.to_csv(f, index=False)
-        return f.name
-
-    
 # -------------- Tests ---------------
 def test_single_window_basic_flow(run_simulation):
     rows = [
@@ -80,20 +95,19 @@ def test_multiple_windows(run_simulation):
     assert final['balances']['C'] == Decimal(1050)  # 1000 + 50
 
 
-def test_empty_csv(run_simulation):
+def test_empty_obligations(run_simulation):
     final = run_simulation([], initial_balances={}).get_snapshot()
     assert final['total_settled'] == Decimal(0)
 
 
-def test_load_csv_missing_tx_id_generates_uuids(run_simulation):
+def test_missing_tx_id_generates_uuid(run_simulation):
     rows = [
         {"payer": "A", "payee": "B", "amount": 100.0, "currency": "USD",
          "timestamp": "2026-07-15 08:00:00"},
         {"payer": "B", "payee": "C", "amount": 50.0, "currency": "USD",
-         "timestamp": "2026-07-15 08:00:30"},
+         "timestamp": "2026-07-15 08:00:30"}
     ]
-    snapshot = run_simulation(rows)   # no tx_id in rows
-    final = snapshot.get_snapshot()
+    final = run_simulation(rows).get_snapshot()
     assert final['total_settled'] == Decimal(150)
 
 
