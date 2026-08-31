@@ -1,10 +1,8 @@
 import pandas as pd
-import tempfile
 from decimal import Decimal
 from django.db.models import Sum, Count, Q
 from obligations.models import Obligation, NettingWindow, SettlementAttempt
 from api.serializers import ObligationSerializer, NetPositionSerializer
-from streaming.tasks import run_simulation_task
 
 
 def format_decimal(value) -> str:
@@ -61,15 +59,6 @@ def create_obligations_from_csv(file) -> dict:
     df = normalize_obligations_df(df)
     records = df.to_dict(orient='records')
     return create_obligations_from_records(records)
-
-
-def enqueue_simulation_from_file(csv_file) -> str:
-    with tempfile.NamedTemporaryFile(delete=False, suffix='.csv') as tmp:
-        for chunk in csv_file.chunks():
-            tmp.write(chunk)
-        tmp_path = tmp.name
-        task = run_simulation_task.delay(tmp_path)
-        return task.id
 
 
 def get_net_positions_for_window(window_param: str = "latest") -> dict:

@@ -1,5 +1,4 @@
 from decimal import Decimal
-from unittest.mock import patch
 import pandas as pd
 import pytest
 from django.core.files.uploadedfile import SimpleUploadedFile
@@ -99,16 +98,6 @@ def test_create_obligations_from_csv_invalid_file():
     empty_file = SimpleUploadedFile("empty.csv", b"", content_type="text/csv")
     with pytest.raises(ValueError, match="Failed to parse CSV"):
         services.create_obligations_from_csv(empty_file)
-
-
-# ---------- Tests for `enqueue_simulation_from_file` ----------
-@patch("streaming.tasks.run_simulation_task.delay")
-def test_enqueue_simulation_from_file(mock_delay):
-    mock_delay.return_value.id = "fake-task-id"
-    csv_file = SimpleUploadedFile("test.csv", b"dummy", content_type="text/csv")
-    task_id = services.enqueue_simulation_from_file(csv_file)
-    assert task_id == "fake-task-id"
-    mock_delay.assert_called_once()
 
 
 # ---------- Tests for `get_net_positions_for_window` ----------

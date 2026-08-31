@@ -1,4 +1,4 @@
-from unittest.mock import patch
+from unittest.mock import patch, Mock
 import pytest
 from django.core.files.uploadedfile import SimpleUploadedFile
 from django.urls import reverse
@@ -15,7 +15,7 @@ def test_create_obligation_endpoint(api_client):
         "payee": "Bank_B",
         "amount": "100.00",
         "currency": "USD",
-        "timestamp": "2026-08-11T08:00:00Z",
+        "timestamp": "2026-08-11T08:00:00Z"
     }
     response = api_client.post(url, data, format="json")
     assert response.status_code == 201
@@ -51,7 +51,7 @@ def test_bulk_upload_json(api_client):
             "payee": "B",
             "amount": "100.00",
             "currency": "USD",
-            "timestamp": "2026-08-11T08:00:00Z",
+            "timestamp": "2026-08-11T08:00:00Z"
         }
     ]
     response = api_client.post(url, payload, format="json")
@@ -60,14 +60,15 @@ def test_bulk_upload_json(api_client):
 
 
 # ---------- Netting Window Endpoints ----------
-@patch("api.views.services.enqueue_simulation_from_file", return_value="fake-task-id")
-def test_trigger_netting_endpoint(mock_enqueue, api_client):
-    csv_file = SimpleUploadedFile("test.csv", b"dummy", content_type="text/csv")
+@patch("api.views.run_simulation_task.delay")
+def test_trigger_netting_endpoint(mock_delay, api_client):
+    mock_delay.return_value = Mock()
+    mock_delay.return_value.id = "fake-task-id"
     url = reverse("nettingwindow-trigger-netting")
-    response = api_client.post(url, {"file": csv_file}, format="multipart")
+    response = api_client.post(url, {}, format="json")
     assert response.status_code == 202
     assert response.data["task_id"] == "fake-task-id"
-    mock_enqueue.assert_called_once()
+    mock_delay.assert_called_once()
 
 
 def test_positions_endpoint_latest(api_client):
@@ -92,7 +93,7 @@ def test_summary_endpoint(api_client):
         net_obligation_count=1,
         gross_volume="100.00",
         net_volume="50.00",
-        liquidity_saved="50.00",
+        liquidity_saved="50.00"
     )
     SettlementAttemptFactory(window=w, amount="50.00", status="settled")
     url = reverse("nettingwindow-summary")

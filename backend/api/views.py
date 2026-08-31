@@ -6,6 +6,7 @@ from rest_framework.decorators import action
 from obligations.models import Obligation, NettingWindow, ParticipantBalance
 from .serializers import ObligationSerializer, NettingWindowSerializer, ParticipantBalanceSerializer
 from api import services
+from streaming.tasks import run_simulation_task
 
 
 class ObligationViewSet(viewsets.ModelViewSet):
@@ -40,16 +41,12 @@ class NettingWindowViewSet(viewsets.ReadOnlyModelViewSet):
 
     @action(detail=False, methods=['post'], url_path='trigger_netting')
     def trigger_netting(self, request):
-        csv_file = request.FILES.get('file')
-        if not csv_file:
-            return Response({'error': 'CSV file is required.'}, status=status.HTTP_400_BAD_REQUEST)
-
-        try:
-            task_id = services.enqueue_simulation_from_file(csv_file)
-        except Exception as e:
-            return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
-        return Response({"task_id": task_id, "status": "Netting simulation started."}, status=status.HTTP_202_ACCEPTED)
-
+        task = run_simulation_task.delay()
+        return Response(
+            {"task_id": task.id, "status": "Netting simulation started."}, 
+            status=status.HTTP_202_ACCEPTED
+        )
+    
     @action(detail=False, methods=["get"], url_path="positions")
     def positions(self, request):
         result = services.get_net_positions_for_window(request.query_params.get("window", "latest"))
