@@ -25,10 +25,11 @@ def generate_cycle(
     length = random.choice([3, 4, 5])
     cycle_nodes = random.sample(participants, length)
 
-    # All edges in this cycle will get same random timestamp within the day
-    base_ts = datetime(2026, 7, 15, 8, 0, 0, tzinfo=tz) + timedelta(
-        seconds=random.randint(0, 10*60*60 - 1)  # 10 hrs in secs
-    )
+    # All edges in this cycle will get same rand ts relative to "now" to ensure current cycle time
+    base_ts = datetime.now(tz) + timedelta(
+        seconds=random.randint(0, 10*60*60 - 1)
+    ) # Now + 10 hours
+    
     edges = []
     for i in range(length):
         payer = cycle_nodes[i]
@@ -49,9 +50,9 @@ def generate_obligations(
     if seed is not None:
         random.seed(seed)
     if start_time is None:
-        start_time = datetime(2026, 7, 15, 8, 0, 0, tzinfo=tz)
+        start_time = datetime.now(tz)
     if end_time is None:
-        end_time = datetime(2026, 7, 15, 18, 0, 0, tzinfo=tz)
+        end_time = start_time + timedelta(hours=10)
 
     participants = generate_participants()
     clusters = assign_clusters(participants)

@@ -2,7 +2,7 @@ import pytest
 import random
 import pandas as pd
 import networkx as nx
-from datetime import datetime, timezone
+from datetime import datetime, timezone, timedelta
 from ..data_generator.generate_obligations import generate_obligations, generate_participants, assign_clusters
 
 
@@ -26,7 +26,7 @@ def test_default_parameters_return_dataframe():
     expected_cols = {'payer', 'payee', 'amount', 'currency', 'timestamp'}
     assert set(df.columns) == expected_cols
 
-
+ 
 def test_all_amounts_positive():
     df = generate_obligations(num_cycles=5, noise_factor=2)
     assert (df['amount'] > 0).all()
@@ -38,8 +38,8 @@ def test_all_currency_are_usd():
 
 
 def test_timestamps_within_window():
-    start = datetime(2026, 7, 15, 8, 0, 0, tzinfo=timezone.utc)
-    end   = datetime(2026, 7, 15, 18, 0, 0, tzinfo=timezone.utc)
+    start = datetime.now(tz=timezone.utc)
+    end = datetime.now(tz=timezone.utc) + timedelta(hours=10)
     df = generate_obligations(num_cycles=10, noise_factor=2, start_time=start, end_time=end)
     assert (df['timestamp'] >= start).all()
     assert (df['timestamp'] <= end).all()
