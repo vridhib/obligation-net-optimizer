@@ -26,6 +26,13 @@ def persist_window(
         liquidity_saved=liquidity_saved
     )
 
+    # Update existing obligations
+    for obl in window_obls:
+        Obligation.objects.filter(tx_id=obl.tx_id).update(
+            status=Obligation.Status.NETTED,
+            netting_window=window
+        )
+    
     # Net positions
     for participant, net_amt in net_positions.items():
         NetPosition.objects.create(window=window, participant=participant, net_amount=net_amt)

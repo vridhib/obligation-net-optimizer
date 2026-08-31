@@ -7,8 +7,6 @@ class Obligation(models.Model):
     class Status(models.TextChoices):
         PENDING = 'pending', _('Pending')
         NETTED = 'netted', _('Netted')     
-        SETTLED = 'settled', _('Settled')
-        FAILED = 'failed', _('Failed')
 
     tx_id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     payer = models.CharField(max_length=50)
