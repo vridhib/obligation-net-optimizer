@@ -58,6 +58,28 @@ class NettingWindowViewSet(viewsets.ReadOnlyModelViewSet):
     def summary(self, request):
         return Response(services.get_netting_summary())
 
+    @action(detail=False, methods=['get'], url_path="graph")
+    def graph(self, request):
+        window_param = request.query_params.get("window", "latest")
+        view = request.query_params.get("view", "net")
+
+        if view not in ("gross", "net"):
+            return Response({"error": "view must be gross or net"}, status=status.HTTP_400_BAD_REQUEST)
+
+        if window_param == "latest":
+            window = NettingWindow.objects.order_by("-end_time").first()
+            if not window:
+                return Response({"window_id": None, "view": view, "nodes": [], "edges": []})
+        else:
+            try:
+                window_id = int(window_param)
+                window = NettingWindow.objects.get(window_id=window_id)
+            except (ValueError, NettingWindow.DoesNotExist):
+                return Response({"error": "Invalid window identifier"}, status=status.HTTP_404_NOT_FOUND)
+
+        graph_data = services.get_graph_for_window(window.window_id, view)
+        return Response(graph_data)
+
 
 class ParticipantBalanceViewSet(viewsets.ReadOnlyModelViewSet):
     queryset = ParticipantBalance.objects.all().order_by('participant')

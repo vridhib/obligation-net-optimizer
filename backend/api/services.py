@@ -122,3 +122,78 @@ def get_netting_summary() -> dict:
         "settled_attempts": attempts["settled"],
         "failed_attempts": attempts["failed"],
     }
+
+
+def get_graph_for_window(window_id: int, view: str) -> dict:
+    window = NettingWindow.objects.get(window_id=window_id)
+
+    if view == "gross":
+        return _build_gross_graph(window)
+    elif view == "net":
+        return _build_net_graph(window)
+    else:
+        raise ValueError("view must be 'gross' or 'net'")
+
+
+def _build_gross_graph(window):
+    edges_data = (
+        Obligation.objects
+        .filter(netting_window=window)
+        .values("payer", "payee")
+        .annotate(total=Sum("amount"))
+        .order_by("payer", "payee")
+    )
+
+    edges = []
+    participants = set()
+    for i, e in enumerate(edges_data):
+        participants.add(e["payer"])
+        participants.add(e["payee"])
+        edges.append({
+            "id": f"g_{i}",
+            "source": e["payer"],
+            "target": e["payee"],
+            "amount": str(e["total"]),
+        })
+
+    nodes = [
+        {"id": p, "label": p, "net_amount": None}
+        for p in sorted(participants)
+    ]
+
+    return {
+        "window_id": window.window_id,
+        "view": "gross",
+        "nodes": nodes,
+        "edges": edges,
+    }
+
+
+def _build_net_graph(window):
+    attempts = window.settlement_attempts.all().order_by("payer", "payee")
+    edges = [
+        {
+            "id": f"n_{i}",
+            "source": a.payer,
+            "target": a.payee,
+            "amount": str(a.amount),
+        }
+        for i, a in enumerate(attempts)
+    ]
+
+    net_positions = window.net_positions.all().order_by("participant")
+    nodes = [
+        {
+            "id": np.participant,
+            "label": np.participant,
+            "net_amount": str(np.net_amount),
+        }
+        for np in net_positions
+    ]
+
+    return {
+        "window_id": window.window_id,
+        "view": "net",
+        "nodes": nodes,
+        "edges": edges,
+    }

@@ -1,10 +1,11 @@
 from decimal import Decimal
 import pandas as pd
 import pytest
+from datetime import datetime, timezone
 from django.core.files.uploadedfile import SimpleUploadedFile
 from api import services
-from .factories import NettingWindowFactory, NetPositionFactory, SettlementAttemptFactory
-from obligations.models import Obligation
+from .factories import NettingWindowFactory, NetPositionFactory, SettlementAttemptFactory, ObligationFactory
+from obligations.models import Obligation, NettingWindow
 
 
 pytestmark = pytest.mark.django_db
@@ -160,3 +161,56 @@ def test_get_netting_summary_no_windows():
     summary = services.get_netting_summary()
     assert summary["total_windows"] == 0
     assert summary["gross_volume"] == "0"
+
+
+# --------- Tests for `get_graph_for_window` ----------
+def test_get_graph_for_window_gross():
+    window = NettingWindowFactory()
+    ObligationFactory(
+        payer="Bank_A", payee="Bank_B", amount=Decimal("100.00"),
+        timestamp=datetime.now(timezone.utc), netting_window=window, status=Obligation.Status.NETTED
+    )
+    ObligationFactory(
+        payer="Bank_A", payee="Bank_B", amount=Decimal("50.00"),
+        timestamp=datetime.now(timezone.utc), netting_window=window, status=Obligation.Status.NETTED
+    )
+    ObligationFactory(
+        payer="Bank_B", payee="Bank_C", amount=Decimal("75.00"),
+        timestamp=datetime.now(timezone.utc), netting_window=window, status=Obligation.Status.NETTED
+    )
+
+    result = services.get_graph_for_window(window.window_id, "gross")
+    assert result["window_id"] == window.window_id
+    assert result["view"] == "gross"
+    assert len(result["nodes"]) == 3   # A, B, C
+    # Edges aggregated: A->B = 150, B->C = 75
+    assert len(result["edges"]) == 2
+    print(result["edges"])
+    assert any(e["source"] == "Bank_A" and e["target"] == "Bank_B" and e["amount"] == "150" for e in result["edges"])
+
+
+def test_get_graph_for_window_net():
+    window = NettingWindowFactory()
+    NetPositionFactory(window=window, participant="Bank_A", net_amount=Decimal("-100.00"))
+    NetPositionFactory(window=window, participant="Bank_B", net_amount=Decimal("100.00"))
+    SettlementAttemptFactory(window=window, payer="Bank_A", payee="Bank_B", amount=Decimal("100.00"), status="settled")
+
+    result = services.get_graph_for_window(window.window_id, "net")
+    assert result["view"] == "net"
+    assert len(result["nodes"]) == 2
+    assert result["nodes"][0]["net_amount"] in ("-100.00", "100.00")
+    assert len(result["edges"]) == 1
+    assert result["edges"][0]["source"] == "Bank_A"
+    assert result["edges"][0]["target"] == "Bank_B"
+    assert result["edges"][0]["amount"] == "100.00"
+
+
+def test_get_graph_for_window_invalid_view():
+    window = NettingWindowFactory()
+    with pytest.raises(ValueError):
+        services.get_graph_for_window(window.window_id, "invalid")
+
+
+def test_get_graph_for_window_nonexistent():
+    with pytest.raises(NettingWindow.DoesNotExist):
+        services.get_graph_for_window(99999, "net")

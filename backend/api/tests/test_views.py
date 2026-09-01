@@ -2,7 +2,9 @@ from unittest.mock import patch, Mock
 import pytest
 from django.core.files.uploadedfile import SimpleUploadedFile
 from django.urls import reverse
+from datetime import datetime, timezone
 from .factories import ObligationFactory, NettingWindowFactory, NetPositionFactory, SettlementAttemptFactory, ParticipantBalanceFactory
+from obligations.models import Obligation
 
 
 pytestmark = pytest.mark.django_db
@@ -101,6 +103,43 @@ def test_summary_endpoint(api_client):
     assert response.status_code == 200
     assert response.data["total_windows"] == 1
     assert response.data["settled_attempts"] == 1
+
+
+@pytest.mark.parametrize("window_param, view", [
+    ("latest", "gross"),
+    ("latest", "net"),
+    ("1", "gross"),
+    ("1", "net")
+])
+def test_graph_endpoint(window_param, view, api_client):
+    window = NettingWindowFactory()
+    # Create obligations or settlement attempts depending on view
+    if view == "net":
+        NetPositionFactory(window=window, participant="Bank_A", net_amount="-100.00")
+        SettlementAttemptFactory(window=window, payer="Bank_A", payee="Bank_B", amount="50.00")
+    else: # Create obligation linked to window
+        ObligationFactory(payer="Bank_A", payee="Bank_B", amount=50.00, timestamp=datetime.now(timezone.utc), netting_window=window, status=Obligation.Status.NETTED)
+
+    url = reverse("nettingwindow-graph")
+    response = api_client.get(url, {"window": window_param, "view": view})
+    assert response.status_code == 200
+    assert response.data["window_id"] == window.window_id
+    assert response.data["view"] == view
+    assert len(response.data["nodes"]) >= 1
+    assert len(response.data["edges"]) >= 1
+
+
+def test_graph_endpoint_invalid_view(api_client):
+    url = reverse("nettingwindow-graph")
+    response = api_client.get(url, {"view": "invalid"})
+    assert response.status_code == 400
+    assert "error" in response.data
+
+
+def test_graph_endpoint_invalid_window_id(api_client):
+    url = reverse("nettingwindow-graph")
+    response = api_client.get(url, {"window": "abc"})
+    assert response.status_code == 404
 
 
 # ---------- Participant Endpoint ----------
