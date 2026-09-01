@@ -1,8 +1,6 @@
 import time
 import logging
 import threading
-import pandas as pd
-import matplotlib.pyplot as plt
 from datetime import datetime, timedelta
 from collections import defaultdict, deque
 from decimal import Decimal
@@ -67,65 +65,6 @@ class Snapshot:
             }
 
 
-    def generate_report(self, output_path="report.png"):
-        if not self.window_history:
-            logger.warning("No window history available for report.")
-            return None
-
-        gross_per_window = sum(w['gross_volume'] for w in self.window_history)
-        settled_per_window = sum(w['total_settled'] for w in self.window_history)
-        print(f"Total gross: {gross_per_window}, Total settled: {settled_per_window}")
-
-        df = pd.DataFrame(self.window_history)
-        df['last_window_end'] = pd.to_datetime(df['last_window_end'])
-        df.set_index('last_window_end', inplace=True)
-
-        # Convert Decimal columns to float for plotting
-        numeric_cols = ['total_settled', 'total_failed', 'liquidity_used', 'liquidity_saved', 'gross_volume', 'failure_rate']
-        for col in numeric_cols:
-            df[col] = df[col].astype(float)
-
-        _, axes = plt.subplots(3, 2, figsize=(14, 14))
-
-        # Volume & savings (top left)
-        df[['gross_volume', 'total_settled', 'liquidity_saved']].plot(
-            ax=axes[0, 0], title="Gross vs Settled Volume & Liquidity Saved"
-        )
-
-        # Failure rate (top right)
-        df[['failure_rate']].plot(ax=axes[0, 1], title="Settlement Failure Rate", color='red')
-
-        # Settlement composition (middle left) stacked bar
-        comp_df = df[['total_settled', 'total_failed']].copy()
-        comp_df.plot.bar(ax=axes[1, 0], stacked=True, title="Settled vs Failed per Window")
-
-        # Liquidity usage trend (middle right) cumulative
-        df['liquidity_used_cum'] = df['liquidity_used']  # already cumulative
-        df['liquidity_used_cum'].plot(ax=axes[1, 1], title="Cumulative Liquidity Used", color='green')
-
-        # Final net positions (bottom left) bar chart with color
-        if self.net_positions:
-            net_df = pd.DataFrame(
-                list(self.net_positions.items()), columns=['Participant', 'Net Position']
-            )
-            colors = ['green' if v >= 0 else 'red' for v in net_df['Net Position']]
-            axes[2, 0].bar(net_df['Participant'], net_df['Net Position'], color=colors)
-            axes[2, 0].set_title("Final Net Positions (Green = Creditor, Red = Debtor)")
-            axes[2, 0].axhline(y=0, color='black', linewidth=0.8)
-
-        # Final balances (bottom right)
-        if self.balances:
-            bal_df = pd.DataFrame(
-                list(self.balances.items()), columns=['Participant', 'Balance']
-            )
-            axes[2, 1].bar(bal_df['Participant'], bal_df['Balance'])
-            axes[2, 1].set_title("Final Balances")
-
-        plt.tight_layout()
-        plt.savefig(output_path)
-        plt.close()
-        return df
-
 
 class StreamSimulator:
     """
@@ -189,7 +128,6 @@ class StreamSimulator:
         self._running = False
 
 
-    # TODO: refactor _process_window
     def _process_window(self, window_end: datetime):
         """Run netting and settlement for the window [start, window_end)"""
 
