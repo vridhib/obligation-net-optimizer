@@ -153,7 +153,7 @@ def _build_gross_graph(window):
             "id": f"g_{i}",
             "source": e["payer"],
             "target": e["payee"],
-            "amount": str(e["total"]),
+            "amount": format_decimal(e["total"]),
         })
 
     nodes = [
@@ -176,7 +176,7 @@ def _build_net_graph(window):
             "id": f"n_{i}",
             "source": a.payer,
             "target": a.payee,
-            "amount": str(a.amount),
+            "amount": format_decimal(a.amount),
         }
         for i, a in enumerate(attempts)
     ]
@@ -186,7 +186,7 @@ def _build_net_graph(window):
         {
             "id": np.participant,
             "label": np.participant,
-            "net_amount": str(np.net_amount),
+            "net_amount": format_decimal(np.net_amount),
         }
         for np in net_positions
     ]
