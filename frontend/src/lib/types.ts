@@ -65,3 +65,23 @@ export interface NettingPositionsResponse {
   end_time?: string;
   positions: NetPosition[];
 }
+
+export interface GraphNode {
+  id: string;
+  label: string;
+  net_amount: string | null;
+}
+
+export interface GraphEdge {
+  id: string;
+  source: string;
+  target: string;
+  amount: string;
+}
+
+export interface GraphData {
+  window_id: number;
+  view: "gross" | "net";
+  nodes: GraphNode[];
+  edges: GraphEdge[];
+}

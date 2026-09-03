@@ -5,7 +5,8 @@ import type {
   Summary,
   ParticipantBalance,
   NettingPositionsResponse,
-  PaginatedResponse
+  PaginatedResponse,
+  GraphData
 } from "./types";
 
 
@@ -13,14 +14,11 @@ const baseURL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api";
 
 export const api = axios.create({
   baseURL,
-  headers: { "Content-Type": "application/json" },
+  headers: { "Content-Type": "application/json" }
 });
 
-export async function getSummary(): Promise<Summary> {
-  const res = await api.get<Summary>("/netting-windows/summary/");
-  return res.data;
-}
 
+// ----------------- Participants ----------------
 export async function getParticipants(): Promise<ParticipantBalance[]> {
   const res = await api.get<PaginatedResponse<ParticipantBalance>>("/participants/");
   return res.data.results;
@@ -48,10 +46,10 @@ export async function bulkUploadObligations(
   if (file) {
     const formData = new FormData();
     formData.append("file", file);
-    const res  = await api.post(
+    const res = await api.post(
       "/obligations/bulk/",
       formData,
-      { headers: { "Content-Type": "multipart/form-data" }}
+      { headers: { "Content-Type": "multipart/form-data" } }
     );
     return res.data
   }
@@ -62,7 +60,7 @@ export async function bulkUploadObligations(
 
 
 // --------------- Netting Windows ---------------
-export async function getNettingWindows(params?: { page?: number }): Promise <PaginatedResponse<NettingWindow>> {
+export async function getNettingWindows(params?: { page?: number }): Promise<PaginatedResponse<NettingWindow>> {
   const res = await api.get<PaginatedResponse<NettingWindow>>("/netting-windows/", { params });
   return res.data;
 }
@@ -85,8 +83,23 @@ export async function triggerNetting(file: File): Promise<{ task_id: string }> {
 
 export async function getLatestPositions(): Promise<NettingPositionsResponse> {
   const res = await api.get<NettingPositionsResponse>(
-    "/netting-windows/positions/", 
+    "/netting-windows/positions/",
     { params: { window: "latest" } }
   );
+  return res.data;
+}
+
+export async function getSummary(): Promise<Summary> {
+  const res = await api.get<Summary>("/netting-windows/summary/");
+  return res.data;
+}
+
+export async function getGraph(
+  windowId: number | "latest" = "latest",
+  view: "gross" | "net" = "net"
+): Promise<GraphData> {
+  const res = await api.get<GraphData>("/netting-windows/graph/", {
+    params: { window: windowId, view }
+  });
   return res.data;
 }
