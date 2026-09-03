@@ -186,7 +186,7 @@ def test_get_graph_for_window_gross():
     # Edges aggregated: A->B = 150, B->C = 75
     assert len(result["edges"]) == 2
     print(result["edges"])
-    assert any(e["source"] == "Bank_A" and e["target"] == "Bank_B" and e["amount"] == "150" for e in result["edges"])
+    assert any(e["source"] == "Bank_A" and e["target"] == "Bank_B" and e["amount"] == "150.00" for e in result["edges"])
 
 
 def test_get_graph_for_window_net():
