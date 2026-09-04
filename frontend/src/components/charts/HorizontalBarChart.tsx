@@ -45,7 +45,7 @@ export function HorizontalBarChart({ data }: { data: BarDatum[] }) {
     g.append("g")
       .call(d3.axisLeft(y).tickSize(0))
       .selectAll("text")
-      .attr("class", "text-xs fill-neutral-600");
+      .attr("class", "text-sm fill-neutral-500");
 
     g.append("g")
       .attr("transform", `translate(0,${innerHeight})`)
