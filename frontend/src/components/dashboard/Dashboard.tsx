@@ -16,19 +16,28 @@ export function Dashboard() {
     data: summary,
     isLoading: summaryLoading,
     error: summaryError,
-  } = useQuery({ queryKey: ["summary"], queryFn: getSummary });
+  } = useQuery({ 
+    queryKey: ["summary"], 
+    queryFn: getSummary 
+  });
 
   const {
     data: windows,
     isLoading: windowsLoading,
     error: windowsError,
-  } = useQuery({ queryKey: ["netting-windows"], queryFn: getNettingWindows });
+  } = useQuery({ 
+    queryKey: ["netting-windows"], 
+    queryFn: () => getNettingWindows({ page: 1 }) 
+  });
 
   const {
     data: participants,
     isLoading: participantsLoading,
     error: participantsError,
-  } = useQuery({ queryKey: ["participants"], queryFn: getParticipants });
+  } = useQuery({ 
+    queryKey: ["participants"], 
+    queryFn: getParticipants 
+  });
 
   const isLoading = summaryLoading || windowsLoading || participantsLoading;
   const hasError = summaryError || windowsError || participantsError;
@@ -65,7 +74,7 @@ export function Dashboard() {
 
   // Prepare time series data from windows
   // For each window, total settled = sum of settled attempt amounts
-  const timeSeriesData = windows.map((w) => {
+  const timeSeriesData = windows.results.map((w) => {
     const settled = w.settlement_attempts
       .filter((a) => a.status === "settled")
       .reduce((sum, a) => sum + Number(a.amount), 0);
