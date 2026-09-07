@@ -4,7 +4,6 @@ import { useQuery, useQueryClient, useMutation } from "@tanstack/react-query";
 import { getNettingWindows, triggerNetting } from "@/lib/api";
 import { WindowList } from "./WindowList";
 import { WindowDetail } from "./WindowDetail";
-import { TriggerNettingDialog } from "./TriggerNettingDialog";
 import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
 import { PageHeader } from "../ui/PageHeader";
@@ -13,7 +12,6 @@ import { PageHeader } from "../ui/PageHeader";
 export function NettingWindowsClient() {
   const [selectedId, setSelectedId] = useState<number | null>(null);
   const [page, setPage] = useState(1);
-  const [isDialogOpen, setIsDialogOpen] = useState(false);
   const queryClient = useQueryClient();
 
   const {
@@ -23,14 +21,13 @@ export function NettingWindowsClient() {
     error: listErrorObj,
   } = useQuery({
     queryKey: ["netting-windows", page],
-    queryFn: () => getNettingWindows({ page }),
+    queryFn: () => getNettingWindows({ page })
   });
 
   const mutation = useMutation({
     mutationFn: triggerNetting,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["netting-windows"] });
-      setIsDialogOpen(false);
     },
   });
 
@@ -42,11 +39,27 @@ export function NettingWindowsClient() {
         title="Netting Windows"
         description="Clearing and settlement cycles"
         action={
-          <Button variant="primary" onClick={() => setIsDialogOpen(true)}>
+          <Button
+            variant="primary"
+            onClick={() => mutation.mutate()}
+            disabled={mutation.isPending}
+          >
             Trigger Netting
           </Button>
         }
       />
+
+      {/* Display Mutation Error/Success */}
+      {mutation.isError && (
+        <div className="rounded-md bg-rose-500/10 px-4 py-3 text-sm text-rose-400">
+          {mutation.error?.message || "Failed to trigger netting."}
+        </div>
+      )}
+      {mutation.isSuccess && (
+        <div className="rounded-md bg-emerald-500/10 px-4 py-3 text-sm text-emerald-400">
+          Netting triggered. Task ID: {mutation.data.task_id}
+        </div>
+      )}
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Master List */}
@@ -98,14 +111,6 @@ export function NettingWindowsClient() {
           )}
         </section>
       </div>
-
-      {/* Trigger Dialog */}
-      {isDialogOpen && (
-        <TriggerNettingDialog
-          onClose={() => setIsDialogOpen(false)}
-          mutation={mutation}
-        />
-      )}
     </main>
   );
 }

@@ -70,14 +70,8 @@ export async function getNettingWindow(id: number): Promise<NettingWindow> {
   return res.data;
 }
 
-export async function triggerNetting(file: File): Promise<{ task_id: string }> {
-  const formData = new FormData();
-  formData.append("file", file);
-  const res = await api.post<{ task_id: string }>(
-    "/netting-windows/trigger_netting/",
-    formData,
-    { headers: { "Content-Type": "multipart/form-data" } }
-  );
+export async function triggerNetting(): Promise<{ task_id: string }> {
+  const res = await api.post<{ task_id: string }>("/netting-windows/trigger_netting/");
   return res.data;
 }
 
