@@ -28,7 +28,7 @@ export function ObligationsClient() {
   const totalPages = Math.ceil((data?.count ?? 0) / 20);
 
   return (
-    <main className="min-h-screen bg-black p-8 space-y-6">
+    <main className="min-h-screen bg-slate-950 p-8 space-y-6">
       <PageHeader
         title="Obligations"
         description="Manage individual payment instructions"

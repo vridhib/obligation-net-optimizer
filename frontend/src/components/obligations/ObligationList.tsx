@@ -24,7 +24,7 @@ export function ObligationList({
     return (
       <div className="space-y-3">
         {Array.from({ length: 5 }).map((_, i) => (
-          <Skeleton key={i} className="h-12 w-full bg-slate-800" />
+          <Skeleton key={i} className="h-12 w-full" />
         ))}
       </div>
     );
@@ -40,8 +40,8 @@ export function ObligationList({
 
   return (
     <div className="overflow-x-auto rounded-sm border border-slate-900">
-      <table className="min-w-full divide-y divide-slate-900 text-sm">
-        <thead className="bg-slate">
+      <table className="min-w-full divide-y divide-slate-900 text-sm bg-slate-950">
+        <thead>
           <tr>
             <th className="px-4 py-3 text-left font-medium text-slate-400">tx_id</th>
             <th className="px-4 py-3 text-left font-medium text-slate-400">Payer</th>
@@ -53,7 +53,8 @@ export function ObligationList({
             <th className="px-4 py-3 text-left font-medium text-slate-400">Window</th>
           </tr>
         </thead>
-        <tbody className="divide-y divide-slate-900 bg-black">
+
+        <tbody className="divide-y divide-slate-900">
           {data.map((obl) => (
             <tr key={obl.tx_id} className="hover:bg-slate-800/40 transition-colors">
               <td className="px-4 py-3 font-mono text-xs text-slate-400">

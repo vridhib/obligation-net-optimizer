@@ -108,7 +108,7 @@ export function TimeSeriesLineChart({
         .attr("x", 18)
         .attr("y", 10)
         .text(s.name)
-        .attr("class", "text-xs fill-neutral-600");
+        .attr("class", "text-xs fill-neutral-400");
     });
   }, [series, height]);
 

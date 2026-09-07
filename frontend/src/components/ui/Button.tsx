@@ -9,19 +9,19 @@ const buttonVariants = cva(
   {
     variants: {
       variant: {
-        primary: "bg-indigo-600 text-white hover:bg-indigo-700",
+        primary: "bg-indigo-800 text-white hover:bg-indigo-700",
         secondary: "bg-neutral-100 text-neutral-900 hover:bg-neutral-200",
-        danger: "bg-red-600 text-white hover:bg-red-700",
+        danger: "bg-red-800 text-white hover:bg-red-700"
       },
       size: {
         sm: "h-8 px-3",
         md: "h-10 px-4",
-        lg: "h-12 px-6",
+        lg: "h-12 px-6"
       },
     },
     defaultVariants: {
       variant: "primary",
-      size: "md",
+      size: "md"
     },
   }
 );

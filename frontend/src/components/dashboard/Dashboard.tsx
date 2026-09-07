@@ -132,7 +132,7 @@ export function Dashboard() {
   }));
 
   return (
-    <main className="p-8 space-y-6">
+    <main className="p-8 space-y-6 bg-slate-950 text-gray-300">
       <h1 className="text-2xl font-bold">Dashboard</h1>
 
       {/* KPI Cards */}
@@ -146,22 +146,22 @@ export function Dashboard() {
       {/* Charts */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <Card>
-          <h2 className="mb-4 text-lg font-medium">Gross vs Settled Volume</h2>
+          <h2 className="mb-4 text-lg font-medium font-semibold">Gross vs Settled Volume</h2>
           <TimeSeriesLineChart series={grossVsSettledSeries} />
         </Card>
         <Card>
-          <h2 className="mb-4 text-lg font-medium">Liquidity Saved per Window</h2>
+          <h2 className="mb-4 text-lg font-medium font-semibold">Liquidity Saved per Window</h2>
           <TimeSeriesLineChart series={liquiditySavedSeries} />
         </Card>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <Card>
-          <h2 className="mb-4 text-lg font-medium">Failure Rate per Window</h2>
+          <h2 className="mb-4 text-lg font-medium font-semibold">Failure Rate per Window</h2>
           <TimeSeriesLineChart series={failureRateSeries} />
         </Card>
         <Card>
-          <h2 className="mb-4 text-lg font-medium">Final Participant Balances</h2>
+          <h2 className="mb-4 text-lg font-medium font-semibold">Final Participant Balances</h2>
           <HorizontalBarChart data={participantBalances} />
         </Card>
       </div>
