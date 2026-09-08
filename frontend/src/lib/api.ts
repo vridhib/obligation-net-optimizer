@@ -19,9 +19,9 @@ export const api = axios.create({
 
 
 // ----------------- Participants ----------------
-export async function getParticipants(): Promise<ParticipantBalance[]> {
-  const res = await api.get<PaginatedResponse<ParticipantBalance>>("/participants/");
-  return res.data.results;
+export async function getParticipants(params?: { page?: number }): Promise<PaginatedResponse<ParticipantBalance>> {
+  const res = await api.get<PaginatedResponse<ParticipantBalance>>("/participants/", { params });
+  return res.data;
 }
 
 

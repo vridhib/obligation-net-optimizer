@@ -9,17 +9,21 @@ import { Skeleton } from "@/components/ui/Skeleton";
 import { ErrorMessage } from "@/components/ui/ErrorMessage";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { PageHeader } from "../ui/PageHeader";
+import { Pagination } from "../ui/Pagination";
 
 
 export function ObligationGraph() {
+  const [page, setPage] = useState(1);
   const [selectedWindow, setSelectedWindow] = useState<number | null>(null);
-  const [view, setView] = useState<"gross" | "net">("gross");
+  const [view, setView] = useState<"gross" | "net">("net");
 
-  // Fetch first page of windows for selection
+  // Fetch netting windows for selection
   const { data: windowsData, isLoading: windowsLoading, error: windowsError } = useQuery({
-    queryKey: ["netting-windows-graph"],
-    queryFn: () => getNettingWindows({ page: 1 })
+    queryKey: ["netting-windows-graph", page],
+    queryFn: () => getNettingWindows({ page })
   });
+
+  const totalPages = Math.ceil((windowsData?.count ?? 0) / 20);
 
   // Fetch graph for selected window
   const { data: graphData, isLoading: graphLoading, error: graphError } = useQuery({
@@ -76,6 +80,17 @@ export function ObligationGraph() {
             ))}
           </ul>
         </Card>
+
+        {/* Pagination */}
+        {windowsData && windowsData.count > 0 && (
+          <div className="flex justify-center border-t border-slate-800 pt-4">
+            <Pagination
+              currentPage={page}
+              totalPages={totalPages}
+              onPageChange={(newPage) => setPage(newPage)}
+            />
+          </div>
+        )}
 
         {/* Graph Area */}
         <Card className="lg:col-span-3 bg-slate-950 border-slate-800 p-4">

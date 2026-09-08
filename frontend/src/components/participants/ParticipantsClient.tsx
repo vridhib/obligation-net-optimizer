@@ -8,13 +8,19 @@ import { ErrorMessage } from "@/components/ui/ErrorMessage";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { HorizontalBarChart } from "@/components/charts/HorizontalBarChart";
 import { ParticipantsTable } from "./ParticipantsTable";
+import { useState } from "react";
+import { Pagination } from "../ui/Pagination";
 
 
 export function ParticipantsClient() {
+  const [page, setPage] = useState(1);
   const { data, isLoading, isError, error } = useQuery({
-    queryKey: ["participants"],
-    queryFn: getParticipants
+    queryKey: ["participants", page],
+    queryFn: () => getParticipants({ page })
   });
+
+  const participants = data?.results ?? [];
+  const totalPages = Math.ceil((data?.count ?? 0) / 20);
 
   if (isLoading) {
     return (
@@ -33,7 +39,6 @@ export function ParticipantsClient() {
     );
   }
 
-  const participants = data ?? [];
   if (participants.length === 0) {
     return (
       <main className="min-h-screen bg-slate-950 p-8">
@@ -66,6 +71,16 @@ export function ParticipantsClient() {
           <ParticipantsTable participants={participants} />
         </Card>
       </div>
+
+      {data && data.count > 0 && (
+        <div className="flex justify-center border-t border-slate-800 pt-4">
+          <Pagination 
+            currentPage={page}
+            totalPages={totalPages}
+            onPageChange={(newPage) => setPage(newPage)}
+          />
+        </div>
+      )}
     </main>
   );
 }

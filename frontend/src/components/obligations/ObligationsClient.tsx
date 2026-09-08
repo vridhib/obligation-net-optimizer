@@ -7,6 +7,7 @@ import { ObligationForm } from "./ObligationForm";
 import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
 import { PageHeader } from "../ui/PageHeader";
+import { Pagination } from "../ui/Pagination";
 
 
 export function ObligationsClient() {
@@ -39,6 +40,7 @@ export function ObligationsClient() {
         }
       />
 
+      {/* Search Bar */}
       <Card className="bg-slate border-slate-800 p-4">
         <input
           type="search"
@@ -52,32 +54,22 @@ export function ObligationsClient() {
         />
       </Card>
 
+      {/* Master List */}
       <ObligationList
         data={data?.results ?? []}
         isLoading={isLoading}
         isError={isError}
         error={error}
       />
-
+      
+      {/* Pagination */}
       {data && data.count > 0 && (
-        <div className="flex items-center justify-between border-t border-slate-800 pt-4">
-          <button
-            onClick={() => setPage((p) => Math.max(1, p - 1))}
-            disabled={!data.previous}
-            className="rounded-md border border-slate-700 px-3 py-1.5 text-sm text-slate-300 hover:bg-slate-800 disabled:opacity-40 disabled:hover:bg-transparent"
-          >
-            Previous
-          </button>
-          <span className="text-sm text-slate-400">
-            Page {page} of {totalPages}
-          </span>
-          <button
-            onClick={() => setPage((p) => p + 1)}
-            disabled={!data.next}
-            className="rounded-md border border-slate-700 px-3 py-1.5 text-sm text-slate-300 hover:bg-slate-800 disabled:opacity-40 disabled:hover:bg-transparent"
-          >
-            Next
-          </button>
+        <div className="flex justify-center border-t border-slate-800 pt-4">
+          <Pagination
+            currentPage={page}
+            totalPages={totalPages}
+            onPageChange={setPage}
+          />
         </div>
       )}
 

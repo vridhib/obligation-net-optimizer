@@ -7,6 +7,7 @@ import { WindowDetail } from "./WindowDetail";
 import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
 import { PageHeader } from "../ui/PageHeader";
+import { Pagination } from "../ui/Pagination";
 
 
 export function NettingWindowsClient() {
@@ -76,29 +77,19 @@ export function NettingWindowsClient() {
               selectedId={selectedId}
               onSelect={setSelectedId}
             />
-
-            {/* Pagination */}
-            {listData && listData.count > 0 && (
-              <div className="flex items-center justify-between border-t border-slate-800 p-4">
-                <button
-                  onClick={() => setPage((p) => Math.max(1, p - 1))}
-                  disabled={!listData.previous}
-                  className="rounded border border-slate-700 px-3 py-1.5 text-sm text-slate-300 hover:bg-slate-800 disabled:opacity-40"
-                >
-                  Previous
-                </button>
-                <span className="text-xs text-slate-400">Page {page} of {totalPages}</span>
-                <button
-                  onClick={() => setPage((p) => p + 1)}
-                  disabled={!listData.next}
-                  className="rounded border border-slate-700 px-3 py-1.5 text-sm text-slate-300 hover:bg-slate-800 disabled:opacity-40"
-                >
-                  Next
-                </button>
-              </div>
-            )}
           </Card>
         </section>
+
+        {/* Pagination */}
+        {listData && listData.count > 0 && (
+          <div className="flex justify-center border-t border-slate-800 p-4"> 
+            <Pagination
+              currentPage={page}
+              totalPages={totalPages}
+              onPageChange={(newPage) => setPage(newPage)}
+            />
+          </div>
+        )}
 
         {/* Detail Pane */}
         <section className="lg:col-span-2">
