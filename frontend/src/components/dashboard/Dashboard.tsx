@@ -12,31 +12,19 @@ import { formatCurrency } from "@/lib/format";
 
 
 export function Dashboard() {
-  const {
-    data: summary,
-    isLoading: summaryLoading,
-    error: summaryError,
-  } = useQuery({ 
+  const { data: summary, isLoading: summaryLoading, error: summaryError } = useQuery({ 
     queryKey: ["summary"], 
     queryFn: getSummary 
   });
 
-  const {
-    data: windows,
-    isLoading: windowsLoading,
-    error: windowsError,
-  } = useQuery({ 
+  const { data: windows, isLoading: windowsLoading, error: windowsError } = useQuery({ 
     queryKey: ["netting-windows"], 
     queryFn: () => getNettingWindows({ page: 1 }) 
   });
 
-  const {
-    data: participants,
-    isLoading: participantsLoading,
-    error: participantsError,
-  } = useQuery({ 
+  const { data: participants, isLoading: participantsLoading, error: participantsError } = useQuery({ 
     queryKey: ["participants"], 
-    queryFn: getParticipants 
+    queryFn: () => getParticipants({ page: 1 })
   });
 
   const isLoading = summaryLoading || windowsLoading || participantsLoading;
@@ -125,7 +113,7 @@ export function Dashboard() {
     }
   ];
 
-  const participantBalances = participants.map((p) => ({
+  const participantBalances = participants.results.map((p) => ({
     label: p.participant,
     value: Number(p.balance),
     color: Number(p.balance) >= 0 ? "#10b981" : "#ef4444",
