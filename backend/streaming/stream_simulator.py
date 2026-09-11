@@ -9,6 +9,7 @@ from obligations.utils import persist_window
 from netting.bilateral import bilateral_net
 from netting.scc import multilateral_net
 from netting.settlement import settlement_scheduler
+from streaming.utils import send_snapshot_update
 
 
 logger = logging.getLogger(__name__)
@@ -160,12 +161,13 @@ class StreamSimulator:
         total_settled = results['total_settled']
         total_failed = results['total_failed']
 
-        # Update snapshot, convert net edges to net positions per participant
+        # Convert net edges to net positions per participant
         net_positions = defaultdict(Decimal)
         for payer, payee, amt in net_edges:
             net_positions[payer] -= amt
             net_positions[payee] += amt
 
+        # Update snapshot and persist window
         self.snapshot.update(
             net_positions=dict(net_positions),
             balances=dict(self._balances),
@@ -177,7 +179,6 @@ class StreamSimulator:
             failure_rate=results['failure_rate'],
             last_window_end=window_end
         )
-
         persist_window(
             window_obls=window_obls,
             window_start=window_start,
@@ -190,3 +191,18 @@ class StreamSimulator:
             failed_payments=results['failed'],
             balances=self._balances
         )
+
+        # Build JSON-safe snapshot payload for WebSocket endpoint
+        latest = self.snapshot.get_snapshot()
+        payload = {
+            'window_end': str(window_end),
+            'net_positions': {k: str(v) for k, v in latest['net_positions'].items()},
+            'balances': {k: str(v) for k, v in latest['balances'].items()},
+            'total_settled': str(latest['total_settled']),
+            'total_failed': str(latest['total_failed']),
+            'liquidity_used': str(latest['liquidity_used']),
+            'liquidity_saved': str(latest['liquidity_saved']),
+            'gross_volume': str(latest['gross_volume']),
+            'failure_rate': str(latest['failure_rate'])
+        }
+        send_snapshot_update(payload)

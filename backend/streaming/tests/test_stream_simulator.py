@@ -1,3 +1,4 @@
+from unittest.mock import patch
 import pytest
 from datetime import timedelta, datetime, timezone
 import uuid
@@ -213,3 +214,15 @@ def test_cumulative_liquidity_used(run_simulation):
     assert len(history) == 2
     assert history[0]['liquidity_used'] == Decimal(100)
     assert history[1]['liquidity_used'] == Decimal(150)
+
+
+@patch("streaming.stream_simulator.send_snapshot_update")
+def test_process_window_sends_snapshot(mock_send, run_simulation):
+    rows = [
+        {"payer": "A", "payee": "B", "amount": 100.0, "timestamp": "2026-08-11T08:00:00Z"}
+    ]
+    run_simulation(rows)
+    assert mock_send.called
+    payload = mock_send.call_args[0][0]
+    assert "gross_volume" in payload
+    assert "balances" in payload
