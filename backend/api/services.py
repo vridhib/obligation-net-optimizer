@@ -3,6 +3,7 @@ from decimal import Decimal
 from django.db.models import Sum, Count, Q
 from obligations.models import Obligation, NettingWindow, SettlementAttempt
 from api.serializers import ObligationSerializer, NetPositionSerializer
+from streaming.analytics.anomaly import detect_window_anomalies
 
 
 def format_decimal(value) -> str:
@@ -80,7 +81,7 @@ def get_net_positions_for_window(window_param: str = "latest") -> dict:
         "window_id": window.window_id,
         "start_time": window.start_time,
         "end_time": window.end_time,
-        "positions": data,
+        "positions": data
     }
 
 
@@ -95,7 +96,7 @@ def get_netting_summary() -> dict:
             "net_volume": "0",
             "liquidity_saved": "0",
             "settled_attempts": 0,
-            "failed_attempts": 0,
+            "failed_attempts": 0
         }
 
     totals = windows.aggregate(
@@ -104,12 +105,12 @@ def get_netting_summary() -> dict:
         total_net_count=Sum("net_obligation_count"),
         total_gross_volume=Sum("gross_volume"),
         total_net_volume=Sum("net_volume"),
-        total_liquidity_saved=Sum("liquidity_saved"),
+        total_liquidity_saved=Sum("liquidity_saved")
     )
 
     attempts = SettlementAttempt.objects.filter(window__in=windows).aggregate(
         settled=Count("pk", filter=Q(status="settled")),
-        failed=Count("pk", filter=Q(status="failed")),
+        failed=Count("pk", filter=Q(status="failed"))
     )
 
     return {
@@ -120,7 +121,7 @@ def get_netting_summary() -> dict:
         "net_volume": format_decimal(totals["total_net_volume"]),
         "liquidity_saved": format_decimal(totals["total_liquidity_saved"]),
         "settled_attempts": attempts["settled"],
-        "failed_attempts": attempts["failed"],
+        "failed_attempts": attempts["failed"]
     }
 
 
@@ -153,7 +154,7 @@ def _build_gross_graph(window):
             "id": f"g_{i}",
             "source": e["payer"],
             "target": e["payee"],
-            "amount": format_decimal(e["total"]),
+            "amount": format_decimal(e["total"])
         })
 
     nodes = [
@@ -165,7 +166,7 @@ def _build_gross_graph(window):
         "window_id": window.window_id,
         "view": "gross",
         "nodes": nodes,
-        "edges": edges,
+        "edges": edges
     }
 
 
@@ -176,7 +177,7 @@ def _build_net_graph(window):
             "id": f"n_{i}",
             "source": a.payer,
             "target": a.payee,
-            "amount": format_decimal(a.amount),
+            "amount": format_decimal(a.amount)
         }
         for i, a in enumerate(attempts)
     ]
@@ -186,7 +187,7 @@ def _build_net_graph(window):
         {
             "id": np.participant,
             "label": np.participant,
-            "net_amount": format_decimal(np.net_amount),
+            "net_amount": format_decimal(np.net_amount)
         }
         for np in net_positions
     ]
@@ -195,5 +196,42 @@ def _build_net_graph(window):
         "window_id": window.window_id,
         "view": "net",
         "nodes": nodes,
-        "edges": edges,
+        "edges": edges
+    }
+
+
+def get_anomaly_report() -> dict:
+    windows = NettingWindow.objects.order_by("-end_time")
+    history = [
+        {
+            "window_id": w.window_id,
+            "last_window_end": w.end_time.isoformat(),
+            "total_settled": w.net_volume,
+            "total_failed": sum(
+                a.amount for a in w.settlement_attempts.filter(status="failed")
+            ),
+            "liquidity_saved": w.liquidity_saved,
+            "failure_rate": sum(
+                a.amount for a in w.settlement_attempts.filter(status="failed")
+            ) / max(w.net_volume, 1),
+            "gross_volume": w.gross_volume
+        }
+        for w in windows
+    ]
+
+    anomalies = detect_window_anomalies(history)
+    return {
+        "total_windows": len(history),
+        "anomalies_detected": len(anomalies),
+        "anomalies": [
+            {
+                "window_id": a.window_id,
+                "window_end": a.window_end,
+                "metric": a.metric,
+                "value": a.value,
+                "score": a.score,
+                "method": a.method
+            }
+            for a in anomalies
+        ]
     }

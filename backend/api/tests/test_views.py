@@ -142,6 +142,13 @@ def test_graph_endpoint_invalid_window_id(api_client):
     assert response.status_code == 404
 
 
+def test_anomalies_endpoint(api_client):
+    response = api_client.get(reverse("nettingwindow-anomalies"))
+    assert response.status_code == 200
+    assert "anomalies" in response.data
+    assert "total_windows" in response.data
+
+
 # ---------- Participant Endpoint ----------
 def test_participants_list(api_client):
     ParticipantBalanceFactory(participant="Bank_A", balance="1000.00")

@@ -58,7 +58,7 @@ class NettingWindowViewSet(viewsets.ReadOnlyModelViewSet):
     def summary(self, request):
         return Response(services.get_netting_summary())
 
-    @action(detail=False, methods=['get'], url_path="graph")
+    @action(detail=False, methods=["get"], url_path="graph")
     def graph(self, request):
         window_param = request.query_params.get("window", "latest")
         view = request.query_params.get("view", "net")
@@ -79,6 +79,10 @@ class NettingWindowViewSet(viewsets.ReadOnlyModelViewSet):
 
         graph_data = services.get_graph_for_window(window.window_id, view)
         return Response(graph_data)
+
+    @action(detail=False, methods=["get"], url_path="anomalies")
+    def anomalies(self, request):
+        return Response(services.get_anomaly_report())
 
 
 class ParticipantBalanceViewSet(viewsets.ReadOnlyModelViewSet):
