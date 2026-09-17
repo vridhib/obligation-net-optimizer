@@ -1,13 +1,13 @@
 from celery import shared_task
 from datetime import timedelta
 from decimal import Decimal
-from obligations.models import Obligation
+from obligations.models import Obligation, ParticipantBalance
 from .obligation_store import ObligationStore, Obligation as ObligationData
 from .stream_simulator import Snapshot, StreamSimulator
 
 
 @shared_task
-def run_simulation_task(window_minutes=1, initial_balance=200_000):
+def run_simulation_task(window_minutes=1, initial_balance=Decimal("200000")):
     pending = Obligation.objects.filter(status=Obligation.Status.PENDING).order_by("timestamp")
 
     if not pending.exists():
@@ -29,8 +29,11 @@ def run_simulation_task(window_minutes=1, initial_balance=200_000):
     ]
 
     participants = {o.payer for o in obligations} | {o.payee for o in obligations}
-    balances = {p: Decimal(initial_balance) for p in participants}
-
+    balances = {}
+    for p in participants:
+        pb = ParticipantBalance.objects.filter(participant=p).first()
+        balances[p] = pb.balance if pb else initial_balance
+    
     store = ObligationStore()
     snapshot = Snapshot()
     sim = StreamSimulator(
