@@ -14,6 +14,7 @@ interface WindowListProps {
   error: unknown;
   selectedId: number | null;
   onSelect: (id: number) => void;
+  anomalyWindowIds?: Set<number>;
 }
 
 export function WindowList({
@@ -22,7 +23,8 @@ export function WindowList({
   isError,
   error,
   selectedId,
-  onSelect
+  onSelect,
+  anomalyWindowIds
 }: WindowListProps) {
   if (isLoading) {
     return (
@@ -56,13 +58,19 @@ export function WindowList({
             <div className="flex items-center justify-between">
               <span className="font-mono text-sm text-slate-200">
                 #{window.window_id}
+                {anomalyWindowIds?.has(window.window_id) && (
+                  <span
+                    className="ml-2 inline-block h-1.5 w-1.5 rounded-full bg-amber-400"
+                    aria-label="Has anomaly"
+                  />
+                )}
               </span>
               <span className="text-xs text-slate-400">
                 {new Date(window.end_time).toLocaleString([], {
                   month: "short",
                   day: "numeric",
                   hour: "2-digit",
-                  minute: "2-digit",
+                  minute: "2-digit"
                 })}
               </span>
             </div>

@@ -1,7 +1,7 @@
 "use client";
 import { useState } from "react";
 import { useQuery, useQueryClient, useMutation } from "@tanstack/react-query";
-import { getNettingWindows, triggerNetting } from "@/lib/api";
+import { getAnomalies, getNettingWindows, triggerNetting } from "@/lib/api";
 import { WindowList } from "./WindowList";
 import { WindowDetail } from "./WindowDetail";
 import { Button } from "@/components/ui/Button";
@@ -19,7 +19,7 @@ export function NettingWindowsClient() {
     data: listData,
     isLoading: listLoading,
     isError: listError,
-    error: listErrorObj,
+    error: listErrorObj
   } = useQuery({
     queryKey: ["netting-windows", page],
     queryFn: () => getNettingWindows({ page })
@@ -33,6 +33,14 @@ export function NettingWindowsClient() {
   });
 
   const totalPages = Math.ceil((listData?.count ?? 0) / 20);
+  const { data: anomalyReport } = useQuery({
+    queryKey: ["anomalies"],
+    queryFn: getAnomalies,
+  });
+
+  const anomalyWindowIds = new Set(
+    (anomalyReport?.anomalies ?? []).map((a) => a.window_id)
+  );
 
   return (
     <main className="min-h-screen bg-slate-950 p-8 space-y-6">
@@ -76,13 +84,14 @@ export function NettingWindowsClient() {
               error={listErrorObj}
               selectedId={selectedId}
               onSelect={setSelectedId}
+              anomalyWindowIds={anomalyWindowIds}
             />
           </Card>
         </section>
 
         {/* Pagination */}
         {listData && listData.count > 0 && (
-          <div className="flex justify-center border-t border-slate-800 p-4"> 
+          <div className="flex justify-center border-t border-slate-800 p-4">
             <Pagination
               currentPage={page}
               totalPages={totalPages}

@@ -1,17 +1,23 @@
 "use client";
 import { useQuery } from "@tanstack/react-query";
-import { getNettingWindow } from "@/lib/api";
+import { getAnomalies, getNettingWindow } from "@/lib/api";
 import { Card } from "@/components/ui/Card";
 import { Skeleton } from "@/components/ui/Skeleton";
 import { ErrorMessage } from "@/components/ui/ErrorMessage";
 import { HorizontalBarChart } from "@/components/charts/HorizontalBarChart";
 import { formatCurrency } from "@/lib/format";
+import { AlertTriangle } from "lucide-react";
 
 
 export function WindowDetail({ windowId }: { windowId: number }) {
   const { data: window, isLoading, isError, error } = useQuery({
     queryKey: ["netting-window", windowId],
-    queryFn: () => getNettingWindow(windowId),
+    queryFn: () => getNettingWindow(windowId)
+  });
+
+  const { data: anomalyReport } = useQuery({
+    queryKey: ["anomalies"],
+    queryFn: getAnomalies
   });
 
   if (isLoading) {
@@ -27,6 +33,10 @@ export function WindowDetail({ windowId }: { windowId: number }) {
     value: Number(p.net_amount),
     color: Number(p.net_amount) >= 0 ? "#10b981" : "#ef4444",
   }));
+
+  const windowAnomalies = anomalyReport?.anomalies.filter(
+    (a) => a.window_id === window.window_id
+  ) ?? [];
 
   return (
     <article className="space-y-6">
@@ -45,6 +55,26 @@ export function WindowDetail({ windowId }: { windowId: number }) {
           </p>
         </Card>
       </div>
+
+      {/* Anomalies */}
+      {windowAnomalies.length > 0 && (
+        <Card className="border-amber-500/30 bg-amber-500/5 p-4">
+          <div className="flex items-center gap-2">
+            <AlertTriangle className="h-4 w-4 text-amber-400" />
+            <span className="text-sm font-medium text-amber-400">
+              Anomaly detected
+            </span>
+          </div>
+          <ul className="mt-2 space-y-1">
+            {windowAnomalies.map((a, i) => (
+              <li key={i} className="text-xs text-slate-300">
+                <span className="font-medium">{a.metric}</span> scored{" "}
+                <span className="font-mono text-amber-400">{a.score.toFixed(4)}σ</span>{" "}above normal
+              </li>
+            ))}
+          </ul>
+        </Card>
+      )}
 
       {/* Net Positions Chart */}
       <Card className="border-slate-800 p-6">
