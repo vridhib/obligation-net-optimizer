@@ -6,7 +6,8 @@ import type {
   ParticipantBalance,
   NettingPositionsResponse,
   PaginatedResponse,
-  GraphData
+  GraphData,
+  AnomalyReport
 } from "./types";
 
 
@@ -95,5 +96,10 @@ export async function getGraph(
   const res = await api.get<GraphData>("/netting-windows/graph/", {
     params: { window: windowId, view }
   });
+  return res.data;
+}
+
+export async function getAnomalies(): Promise<AnomalyReport> {
+  const res = await api.get<AnomalyReport>("/netting-windows/anomalies/");
   return res.data;
 }

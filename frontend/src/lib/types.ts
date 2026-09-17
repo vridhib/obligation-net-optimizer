@@ -85,3 +85,18 @@ export interface GraphData {
   nodes: GraphNode[];
   edges: GraphEdge[];
 }
+
+export interface Anomaly {
+  window_id: number;
+  window_end: string;
+  metric: string;
+  value: number;
+  score: number;
+  method: "z_score" | "isolation_forest";
+}
+
+export interface AnomalyReport {
+  total_windows: number;
+  anomalies_detected: number;
+  anomalies: Anomaly[];
+}
