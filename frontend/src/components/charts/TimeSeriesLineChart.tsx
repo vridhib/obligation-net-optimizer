@@ -3,10 +3,17 @@ import * as d3 from "d3";
 import { useEffect, useRef } from "react";
 
 
+export interface Marker {
+  label: string;
+  color: string;
+  tooltip?: string;
+}
+
 export interface Series {
   name: string;
   color: string;
   data: { label: string; value: number }[];
+  markers?: Marker[];
 }
 
 interface TimeSeriesLineChartProps {
@@ -14,10 +21,7 @@ interface TimeSeriesLineChartProps {
   height?: number;
 }
 
-export function TimeSeriesLineChart({
-  series,
-  height = 300,
-}: TimeSeriesLineChartProps) {
+export function TimeSeriesLineChart({ series, height = 300 }: TimeSeriesLineChartProps) {
   const ref = useRef<SVGSVGElement>(null);
 
   useEffect(() => {
@@ -90,6 +94,27 @@ export function TimeSeriesLineChart({
         .attr("cy", (d) => y(d.value))
         .attr("r", 3)
         .attr("fill", s.color);
+
+      if (s.markers) {
+        s.markers.forEach((marker) => {
+          const point = s.data.find((d) => d.label === marker.label);
+          if (!point) return;
+
+          g.append("circle")
+            .attr("cx", x(point.label)!)
+            .attr("cy", y(point.value))
+            .attr("r", 6)
+            .attr("fill", "none")
+            .attr("stroke", marker.color)
+            .attr("stroke-width", 2);
+
+          g.append("circle")
+            .attr("cx", x(point.label)!)
+            .attr("cy", y(point.value))
+            .attr("r", 3)
+            .attr("fill", marker.color)
+        });
+      }
     });
 
     // Legend

@@ -1,6 +1,6 @@
 "use client";
 import { useQuery } from "@tanstack/react-query";
-import { getSummary, getNettingWindows, getParticipants } from "@/lib/api";
+import { getSummary, getNettingWindows, getParticipants, getAnomalies } from "@/lib/api";
 import { KpiCard } from "./KpiCard";
 import { TimeSeriesLineChart } from "@/components/charts/TimeSeriesLineChart";
 import { HorizontalBarChart } from "@/components/charts/HorizontalBarChart";
@@ -9,26 +9,32 @@ import { Skeleton } from "@/components/ui/Skeleton";
 import { ErrorMessage } from "@/components/ui/ErrorMessage";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { formatCurrency } from "@/lib/format";
+import { AnomalyBanner } from "./AnomalyBanner";
 
 
 export function Dashboard() {
-  const { data: summary, isLoading: summaryLoading, error: summaryError } = useQuery({ 
-    queryKey: ["summary"], 
-    queryFn: getSummary 
+  const { data: summary, isLoading: summaryLoading, error: summaryError } = useQuery({
+    queryKey: ["summary"],
+    queryFn: getSummary
   });
 
-  const { data: windows, isLoading: windowsLoading, error: windowsError } = useQuery({ 
-    queryKey: ["netting-windows"], 
-    queryFn: () => getNettingWindows({ page: 1 }) 
+  const { data: windows, isLoading: windowsLoading, error: windowsError } = useQuery({
+    queryKey: ["netting-windows"],
+    queryFn: () => getNettingWindows({ page: 1 })
   });
 
-  const { data: participants, isLoading: participantsLoading, error: participantsError } = useQuery({ 
-    queryKey: ["participants"], 
+  const { data: participants, isLoading: participantsLoading, error: participantsError } = useQuery({
+    queryKey: ["participants"],
     queryFn: () => getParticipants({ page: 1 })
   });
 
-  const isLoading = summaryLoading || windowsLoading || participantsLoading;
-  const hasError = summaryError || windowsError || participantsError;
+  const { data: anomalyReport, isLoading: anomalyReportLoading, error: anomalyReportError } = useQuery({
+    queryKey: ["anomalies"],
+    queryFn: getAnomalies
+  });
+
+  const isLoading = summaryLoading || windowsLoading || participantsLoading || anomalyReportLoading;
+  const hasError = summaryError || windowsError || participantsError || anomalyReportError;
 
   if (isLoading) {
     return (
@@ -66,29 +72,45 @@ export function Dashboard() {
     const settled = w.settlement_attempts
       .filter((a) => a.status === "settled")
       .reduce((sum, a) => sum + Number(a.amount), 0);
+
     const failed = w.settlement_attempts
       .filter((a) => a.status === "failed")
       .reduce((sum, a) => sum + Number(a.amount), 0);
+
     const gross = Number(w.gross_volume);
+
     const liquiditySaved = Number(w.liquidity_saved);
+
     const failureRate = failed > 0 || settled > 0 ? failed / (settled + failed) : 0;
+
+    const windowId = w.window_id;
+
     return {
-      label: new Date(w.end_time).toLocaleTimeString([], {
-        hour: "2-digit",
-        minute: "2-digit"
-      }),
+      label: new Date(w.end_time).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
       grossVolume: gross,
       settledVolume: settled,
       liquiditySaved,
-      failureRate
+      failureRate,
+      windowId
     };
   });
+
+  const grossVolumeAnomalyIds = new Set(
+    (anomalyReport?.anomalies ?? [])
+      .filter((a) => a.metric === "gross_volume" || a.metric === "multivariate")
+      .map((a) => a.window_id)
+  );
 
   const grossVsSettledSeries = [
     {
       name: "Gross Volume",
       color: "#94a3b8",
-      data: timeSeriesData.map((d) => ({ label: d.label, value: d.grossVolume }))
+      data: timeSeriesData.map((d) => ({
+        label: d.label, value: d.grossVolume
+      })),
+      markers: timeSeriesData
+        .filter((d) => grossVolumeAnomalyIds.has(d.windowId))
+        .map((d) => ({ label: d.label, color: "#c27b01", tooltip: "Anomalous" }))
     },
     {
       name: "Settled Volume",
@@ -105,13 +127,20 @@ export function Dashboard() {
     }
   ];
 
-  const failureRateSeries = [
-    {
-      name: "Failure Rate",
-      color: "#ef4444",
-      data: timeSeriesData.map((d) => ({ label: d.label, value: d.failureRate }))
-    }
-  ];
+  const failureRateAnomalyIds = new Set(
+    (anomalyReport?.anomalies ?? [])
+      .filter((a) => a.metric === "failure_rate" || a.metric === "multivariate")
+      .map((a) => a.window_id)
+  );
+
+  const failureRateSeries = [{
+    name: "Failure Rate",
+    color: "#ef4444",
+    data: timeSeriesData.map((d) => ({ label: d.label, value: d.failureRate })),
+    markers: timeSeriesData
+      .filter((d) => failureRateAnomalyIds.has(d.windowId))
+      .map((d) => ({ label: d.label, color: "#c27b01", tooltip: "Anomalous" }))
+  }];
 
   const participantBalances = participants.results.map((p) => ({
     label: p.participant,
@@ -130,6 +159,10 @@ export function Dashboard() {
         <KpiCard label="Net Volume" value={formatCurrency(summary.net_volume)} />
         <KpiCard label="Liquidity Saved" value={formatCurrency(summary.liquidity_saved)} />
       </div>
+
+      {anomalyReport && anomalyReport.anomalies_detected > 0 && (
+        <AnomalyBanner anomalies={anomalyReport.anomalies} />
+      )}
 
       {/* Charts */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
