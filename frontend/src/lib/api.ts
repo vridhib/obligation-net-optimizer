@@ -20,7 +20,10 @@ export const api = axios.create({
 
 
 // ----------------- Participants ----------------
-export async function getParticipants(params?: { page?: number }): Promise<PaginatedResponse<ParticipantBalance>> {
+export async function getParticipants(params?: { 
+  page?: number; 
+  search?: string;
+}): Promise<PaginatedResponse<ParticipantBalance>> {
   const res = await api.get<PaginatedResponse<ParticipantBalance>>("/participants/", { params });
   return res.data;
 }
@@ -61,7 +64,10 @@ export async function bulkUploadObligations(
 
 
 // --------------- Netting Windows ---------------
-export async function getNettingWindows(params?: { page?: number }): Promise<PaginatedResponse<NettingWindow>> {
+export async function getNettingWindows(params?: { 
+  page?: number; 
+  window_id?: number; 
+}): Promise<PaginatedResponse<NettingWindow>> {
   const res = await api.get<PaginatedResponse<NettingWindow>>("/netting-windows/", { params });
   return res.data;
 }
