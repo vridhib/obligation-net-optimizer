@@ -38,6 +38,8 @@ class NettingWindowViewSet(viewsets.ReadOnlyModelViewSet):
     serializer_class = NettingWindowSerializer
     permission_classes = [AllowAny]
     parser_classes = [MultiPartParser, JSONParser]
+    filter_backends = [filters.SearchFilter]
+    search_fields = ["window_id"]
 
     @action(detail=False, methods=['post'], url_path='trigger_netting')
     def trigger_netting(self, request):
@@ -89,3 +91,5 @@ class ParticipantBalanceViewSet(viewsets.ReadOnlyModelViewSet):
     queryset = ParticipantBalance.objects.all().order_by('participant')
     serializer_class = ParticipantBalanceSerializer
     permission_classes = [AllowAny]
+    filter_backends = [filters.SearchFilter]
+    search_fields = ["participant"]
