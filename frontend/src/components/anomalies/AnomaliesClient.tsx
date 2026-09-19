@@ -59,7 +59,7 @@ export function AnomaliesClient() {
                     {a.method === "z_score" ? "Statistical" : "Multivariate"} ·{" "}
                     {new Date(a.window_end).toLocaleString()} ·{" "}
                     <Link
-                      href=""
+                      href={`/netting-windows?window=${a.window_id}`}
                       className="text-indigo-400 hover:underline"
                     >
                       View window #{a.window_id}
