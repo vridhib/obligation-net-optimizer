@@ -10,14 +10,35 @@ import { HorizontalBarChart } from "@/components/charts/HorizontalBarChart";
 import { ParticipantsTable } from "./ParticipantsTable";
 import { useState } from "react";
 import { Pagination } from "../ui/Pagination";
+import { useRouter, useSearchParams } from "next/navigation";
+import { SearchBar } from "../ui/SearchBar";
 
 
 export function ParticipantsClient() {
-  const [page, setPage] = useState(1);
+  const searchParams = useSearchParams();
+  const router = useRouter();
+
+  const committedSearch = searchParams.get("q") ?? "";
+  const page = Number(searchParams.get("page") ?? "1");
+
+  const [input, setInput] = useState(committedSearch);
+
   const { data, isLoading, isError, error } = useQuery({
-    queryKey: ["participants", page],
-    queryFn: () => getParticipants({ page })
+    queryKey: ["participants", committedSearch, page],
+    queryFn: () => getParticipants({ page, search: committedSearch })
   });
+
+  const submitSearch = () => {
+    const params = new URLSearchParams();
+    if (input) params.set("q", input);
+    router.push(`/participants?${params.toString()}`);
+  };
+
+  const changePage = (newPage: number) => {
+    const params = new URLSearchParams(searchParams.toString());
+    params.set("page", String(newPage));
+    router.push(`/participants?${params.toString()}`);
+  };
 
   const participants = data?.results ?? [];
   const totalPages = Math.ceil((data?.count ?? 0) / 20);
@@ -60,6 +81,13 @@ export function ParticipantsClient() {
         description="Current liquidity balances across all participants"
       />
 
+      <SearchBar
+        value={input}
+        onChange={setInput}
+        onSubmit={submitSearch}
+        placeholder="Search participant... (press Enter)"
+      />
+
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <Card className="bg-slate-950 border-slate-800 p-6">
           <h2 className="mb-4 text-lg font-medium font-semibold text-slate-200">Balances</h2>
@@ -74,10 +102,10 @@ export function ParticipantsClient() {
 
       {data && data.count > 0 && (
         <div className="flex justify-center border-t border-slate-800 pt-4">
-          <Pagination 
+          <Pagination
             currentPage={page}
             totalPages={totalPages}
-            onPageChange={(newPage) => setPage(newPage)}
+            onPageChange={changePage}
           />
         </div>
       )}

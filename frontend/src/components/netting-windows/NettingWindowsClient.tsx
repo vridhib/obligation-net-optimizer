@@ -1,5 +1,5 @@
 "use client";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useQuery, useQueryClient, useMutation } from "@tanstack/react-query";
 import { getAnomalies, getNettingWindows, triggerNetting } from "@/lib/api";
 import { WindowList } from "./WindowList";
@@ -8,12 +8,25 @@ import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
 import { PageHeader } from "../ui/PageHeader";
 import { Pagination } from "../ui/Pagination";
+import { useRouter, useSearchParams } from "next/navigation";
+import { SearchBar } from "../ui/SearchBar";
 
 
 export function NettingWindowsClient() {
-  const [selectedId, setSelectedId] = useState<number | null>(null);
-  const [page, setPage] = useState(1);
+  const searchParams = useSearchParams();
+  const router = useRouter();
   const queryClient = useQueryClient();
+
+  const urlWindow = searchParams.get("window") ?? "";
+  const page = Number(searchParams.get("page") ?? "1");
+  const selectedId = urlWindow && /^\d+$/.test(urlWindow) ? Number(urlWindow) : null;
+  const windowIdParam = selectedId ?? undefined;
+
+  const [input, setInput] = useState(urlWindow);
+
+  useEffect(() => {
+    setInput(urlWindow);
+  }, [urlWindow]);
 
   const {
     data: listData,
@@ -21,23 +34,44 @@ export function NettingWindowsClient() {
     isError: listError,
     error: listErrorObj
   } = useQuery({
-    queryKey: ["netting-windows", page],
-    queryFn: () => getNettingWindows({ page })
+    queryKey: ["netting-windows", page, windowIdParam],
+    queryFn: () => getNettingWindows({ page, window_id: windowIdParam })
+  });
+
+  const { data: anomalyReport } = useQuery({
+    queryKey: ["anomalies"],
+    queryFn: getAnomalies
   });
 
   const mutation = useMutation({
     mutationFn: triggerNetting,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["netting-windows"] });
-    },
+    }
   });
+
+  const submitSearch = () => {
+    const params = new URLSearchParams();
+    if (input && /^\d+$/.test(input)) {
+      params.set("window", input);
+    }
+    params.set("page", "1");
+    router.push(`/netting-windows?${params.toString()}`);
+  };
+
+  const selectWindow = (id: number) => {
+    const params = new URLSearchParams(searchParams.toString());
+    params.set("window", String(id));
+    router.push(`/netting-windows?${params.toString()}`);
+  };
+
+  const changePage = (newPage: number) => {
+    const params = new URLSearchParams(searchParams.toString());
+    params.set("page", String(newPage));
+    router.push(`/netting-windows?${params.toString()}`);
+  };
 
   const totalPages = Math.ceil((listData?.count ?? 0) / 20);
-  const { data: anomalyReport } = useQuery({
-    queryKey: ["anomalies"],
-    queryFn: getAnomalies,
-  });
-
   const anomalyWindowIds = new Set(
     (anomalyReport?.anomalies ?? []).map((a) => a.window_id)
   );
@@ -45,7 +79,7 @@ export function NettingWindowsClient() {
   return (
     <main className="min-h-screen bg-slate-950 p-8 space-y-6">
       <PageHeader
-        title="Netting Windows"
+        title={`Netting Windows`}
         description="Clearing and settlement cycles"
         action={
           <Button
@@ -56,6 +90,13 @@ export function NettingWindowsClient() {
             Trigger Netting
           </Button>
         }
+      />
+
+      <SearchBar
+        value={input}
+        onChange={setInput}
+        onSubmit={submitSearch}
+        placeholder="Search by window ID... (press Enter)"
       />
 
       {/* Display Mutation Error/Success */}
@@ -83,22 +124,22 @@ export function NettingWindowsClient() {
               isError={listError}
               error={listErrorObj}
               selectedId={selectedId}
-              onSelect={setSelectedId}
+              onSelect={selectWindow}
               anomalyWindowIds={anomalyWindowIds}
             />
           </Card>
-        </section>
 
-        {/* Pagination */}
-        {listData && listData.count > 0 && (
-          <div className="flex justify-center border-t border-slate-800 p-4">
-            <Pagination
-              currentPage={page}
-              totalPages={totalPages}
-              onPageChange={(newPage) => setPage(newPage)}
-            />
-          </div>
-        )}
+          {/* Pagination */}
+          {listData && listData.count > 0 && (
+            <div className="flex justify-center border-t border-slate-800 p-4">
+              <Pagination
+                currentPage={page}
+                totalPages={totalPages}
+                onPageChange={changePage}
+              />
+            </div>
+          )}
+        </section>
 
         {/* Detail Pane */}
         <section className="lg:col-span-2">
