@@ -46,7 +46,7 @@ export function GraphView({ data }: GraphViewProps) {
           selector: "node",
           style: {
             label: "data(label)",
-            "background-color": "#6366f1",
+            "background-color": "#446cc0",
             color: "#fff",
             "text-valign": "center",
             "text-halign": "center",

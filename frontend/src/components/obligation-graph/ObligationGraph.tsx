@@ -119,10 +119,7 @@ export function ObligationGraph() {
                 <li key={w.window_id}>
                   <button
                     onClick={() => selectWindow(w.window_id)}
-                    className={`w-full text-left p-2 rounded-md text-sm transition-colors ${windowIdParam === w.window_id
-                      ? "bg-indigo-600/20 text-indigo-300"
-                      : "text-slate-400 hover:bg-slate-800"
-                      }`}
+                    className={`w-full text-slate-400 text-left p-2 rounded-md text-sm transition-colors ${windowIdParam === w.window_id ? "bg-slate-800" : "hover:bg-slate-800"}`}
                   >
                     #{w.window_id} — {new Date(w.end_time).toLocaleString([], { hour: "2-digit", minute: "2-digit" })}
                   </button>
